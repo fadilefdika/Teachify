@@ -2,6 +2,8 @@ package middlewares
 
 import (
 	"fmt"
+	"lms-go/database"
+	"lms-go/models"
 	"lms-go/utils"
 	"net/http"
 	"strings"
@@ -42,14 +44,34 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Set user ID from claims
-		if claims, ok := token.Claims.(jwt.MapClaims); ok {
-			if id, ok := claims["id"].(float64); ok {
-				c.Set("userID", uint(id))
+		// Simpan claims ke variabel agar bisa dipakai di bawah
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
+			c.Abort()
+			return
+		}
+
+		var user models.User
+
+		if idFloat, ok := claims["id"].(float64); ok {
+			userID := uint(idFloat)
+			c.Set("userID", userID)
+
+			if err := database.DB.First(&user, userID).Error; err != nil {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+				c.Abort()
+				return
 			}
-			if role, ok := claims["role"].(string); ok {
-				c.Set("userRole", role)
-			}
+			c.Set("user", user)
+		} else {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token ID claim"})
+			c.Abort()
+			return
+		}
+
+		if role, ok := claims["role"].(string); ok {
+			c.Set("userRole", role)
 		}
 
 		c.Next()
