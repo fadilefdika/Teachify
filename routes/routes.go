@@ -33,14 +33,14 @@ func SetupRoutes(r *gin.Engine) {
 
             // Modules within a course
             apiAuth.GET("/courses/:id/modules", controllers.GetModulesByCourse)
-            apiAuth.POST("/courses/:id/modules", controllers.CreateModuleForCourse)
+            apiAuth.POST("/courses/:id/modules", controllers.CreateModule)
 
             // Individual modules
             apiAuth.GET("/modules/:id", controllers.GetModuleByID)
             apiAuth.PUT("/modules/:id", controllers.UpdateModule)
             apiAuth.DELETE("/modules/:id", controllers.DeleteModule)
 
-
+            // Modules
             apiAuth.GET("/modules/:id/lessons", controllers.GetLessonsByModule)
             apiAuth.POST("/modules/:id/lessons", controllers.CreateLessonForModule)
             apiAuth.GET("/lessons/:id", controllers.GetLessonByID)

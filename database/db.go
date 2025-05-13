@@ -64,6 +64,10 @@ func AutoMigrateAll() {
 		&models.Course{},
 		&models.Lesson{},
 		&models.Module{},
+		&models.Option{},
+		&models.Question{},
+		&models.Quiz{},
+		&models.Attachment{},
 	}
 
 	for _, model := range modelsToMigrate {

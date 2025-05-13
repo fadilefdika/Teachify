@@ -43,6 +43,7 @@ func main() {
 		return
 	}
 
+	gin.SetMode(gin.DebugMode)
 	// Berikan log jika koneksi berhasil
 	fmt.Println("Successfully connected to the database")
 

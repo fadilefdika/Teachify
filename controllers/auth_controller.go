@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"lms-go/database"
 	"lms-go/models"
 	"lms-go/utils"
@@ -8,7 +9,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"gorm.io/gorm"
 )
 
 var validate *validator.Validate
@@ -27,6 +27,9 @@ func Register(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON format"})
 		return
 	}
+
+	// Debug input dari request
+	fmt.Println("DEBUG: Input from JSON =>", input)
 
 	// Validate input using validator
 	if err := validate.Struct(&input); err != nil {
@@ -53,35 +56,33 @@ func Register(c *gin.Context) {
 	}
 
 	// Create new user
-	user := models.User{Name: input.Name, Email: input.Email, Password: hashedPassword}
+	user := models.User{Name: input.Name, Email: input.Email, Password: hashedPassword, Role: input.Role}
 
-	// Start transaction to ensure atomicity
+	// Debug user yang akan disimpan
+	fmt.Println("DEBUG: User to be saved =>", user)
+
+	// Start transaction
 	tx := database.DB.Begin()
-
-	// Check if transaction starts successfully
 	if tx.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
 		return
 	}
 
-	// Attempt to insert user into database
 	if err := tx.Create(&user).Error; err != nil {
-		tx.Rollback() // rollback transaction if error occurs
-		// Handle error during database insert
-		if err == gorm.ErrDuplicatedKey {
-			c.JSON(http.StatusConflict, gin.H{"error": "User with this email already exists"})
-		} else {
-			// Log the error for debugging purposes
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
-		}
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
 		return
 	}
 
-	tx.Commit() // commit transaction
+	tx.Commit()
 
-	// Respond with success
+	// Debug setelah berhasil simpan
+	fmt.Println("DEBUG: User created successfully with role =>", user.Role)
+
 	c.JSON(http.StatusOK, gin.H{"message": "Registration successful"})
 }
+
+
 
 
 // Login - Handler for user login

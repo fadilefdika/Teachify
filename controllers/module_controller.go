@@ -21,9 +21,9 @@ import (
 // @Failure      500    {object}  map[string]string
 // @Router       /api/courses/{id}/modules [post]
 // @Security     BearerAuth
-func CreateModuleForCourse(c *gin.Context) {
+func CreateModule(c *gin.Context) {
 	var input models.Module
-	courseIDStr  := c.Param("id")
+	courseIDStr := c.Param("id")
 
 	// Convert courseID to uint
 	courseIDUint, err := strconv.ParseUint(courseIDStr, 10, 64)
@@ -38,20 +38,30 @@ func CreateModuleForCourse(c *gin.Context) {
 		return
 	}
 
-	module := models.Module{
-		Title:    input.Title,
-		Content:  input.Content,
-		CourseID: uint(courseIDUint),
+	// Check if course exists
+	var course models.Course
+	if err := database.DB.First(&course, courseIDUint).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Course not found"})
+		return
 	}
 
 	// Create the module
+	module := models.Module{
+		Title:       input.Title,
+		Description: input.Description,
+		CourseID:    uint(courseIDUint),
+		Order:       input.Order, // Ensure Order is passed in the body
+	}
+
 	if err := database.DB.Create(&module).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
+	// Return the created module
 	c.JSON(http.StatusCreated, module)
 }
+
 
 
 // GetModulesByCourse godoc
@@ -67,16 +77,24 @@ func CreateModuleForCourse(c *gin.Context) {
 // @Security     BearerAuth
 func GetModulesByCourse(c *gin.Context) {
 	var modules []models.Module
-	courseID := c.Param("id")
+	courseIDStr := c.Param("id")
 
-	// Find modules by course ID
-	if err := database.DB.Where("course_id = ?", courseID).Find(&modules).Error; err != nil {
+	// Convert courseID to uint
+	courseIDUint, err := strconv.ParseUint(courseIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid course ID"})
+		return
+	}
+
+	// Find modules by course ID with preload for lessons
+	if err := database.DB.Preload("Lessons").Where("course_id = ?", courseIDUint).Find(&modules).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Modules not found"})
 		return
 	}
 
 	c.JSON(http.StatusOK, modules)
 }
+
 
 // GetModuleByID godoc
 // @Summary      Get a specific module by ID
@@ -91,10 +109,17 @@ func GetModulesByCourse(c *gin.Context) {
 // @Security     BearerAuth
 func GetModuleByID(c *gin.Context) {
 	var module models.Module
-	id := c.Param("id")
+	idStr := c.Param("id")
 
-	// Find module by ID
-	if err := database.DB.First(&module, id).Error; err != nil {
+	// Convert id to uint
+	idUint, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid module ID"})
+		return
+	}
+
+	// Find module by ID with preload for lessons (optional, depends on your need)
+	if err := database.DB.Preload("Lessons").First(&module, idUint).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Module not found"})
 		return
 	}
@@ -102,9 +127,10 @@ func GetModuleByID(c *gin.Context) {
 	c.JSON(http.StatusOK, module)
 }
 
+
 // UpdateModule godoc
 // @Summary      Update an existing module by ID
-// @Description  Update the details of a module, including title and content
+// @Description  Update the details of a module, including title and Description
 // @Tags         modules
 // @Produce      json
 // @Param        id   path      int     true  "Module ID"
@@ -117,7 +143,14 @@ func GetModuleByID(c *gin.Context) {
 // @Security     BearerAuth
 func UpdateModule(c *gin.Context) {
 	var input models.Module
-	id := c.Param("id")
+	idStr := c.Param("id")
+
+	// Convert id to uint
+	idUint, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid module ID"})
+		return
+	}
 
 	// Bind JSON input
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -126,16 +159,19 @@ func UpdateModule(c *gin.Context) {
 	}
 
 	var module models.Module
-	// Find module by ID
-	if err := database.DB.First(&module, id).Error; err != nil {
+	// Find module by ID with preload (optional, depends on your need)
+	if err := database.DB.Preload("Lessons").First(&module, idUint).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Module not found"})
 		return
 	}
 
-	// Update module
+	// Update module fields
 	module.Title = input.Title
-	module.Content = input.Content
+	module.Description = input.Description
+	module.Order = input.Order
+	module.CourseID = input.CourseID
 
+	// Save updated module
 	if err := database.DB.Save(&module).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -143,6 +179,7 @@ func UpdateModule(c *gin.Context) {
 
 	c.JSON(http.StatusOK, module)
 }
+
 
 // DeleteModule godoc
 // @Summary      Delete a module by ID
@@ -157,10 +194,24 @@ func UpdateModule(c *gin.Context) {
 // @Router       /api/modules/{id} [delete]
 // @Security     BearerAuth
 func DeleteModule(c *gin.Context) {
-	id := c.Param("id")
+	idStr := c.Param("id")
 
-	// Find and delete module
-	if err := database.DB.Delete(&models.Module{}, id).Error; err != nil {
+	// Convert id to uint
+	idUint, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid module ID"})
+		return
+	}
+
+	var module models.Module
+	// Check if module exists
+	if err := database.DB.First(&module, idUint).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Module not found"})
+		return
+	}
+
+	// Delete module
+	if err := database.DB.Delete(&module).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

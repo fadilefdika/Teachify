@@ -6,13 +6,17 @@ import (
 	"gorm.io/gorm"
 )
 
+// Module represents a course module that contains multiple lessons
 type Module struct {
-    ID        uint      `json:"id"`
-    CreatedAt time.Time `json:"created_at"`
-    UpdatedAt time.Time `json:"updated_at"`
-    DeletedAt gorm.DeletedAt `json:"deleted_at" swaggerignore:"true"`           // Ini sudah menyertakan ID, CreatedAt, UpdatedAt, DeletedAt (soft delete)
-    Title     string       `json:"title" binding:"required"`       // Judul modul, wajib diisi
-    Content   string       `json:"content"`                        // Penjelasan isi modul, bisa teks, HTML, dll.
-    CourseID  uint         `json:"course_id"`                      // Foreign key untuk relasi ke Course
-    Lessons   []Lesson     `json:"lessons" gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"` // Relasi one-to-many ke Lesson
+	ID          uint           `json:"id" gorm:"primaryKey"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+	DeletedAt   gorm.DeletedAt `json:"deleted_at" gorm:"index" swaggerignore:"true"`
+
+	Title       string         `json:"title" binding:"required"`           // Module title
+	Description string         `json:"description"`                        // Description of the module
+	CourseID    uint           `json:"course_id"`                          // Foreign key to Course
+	Order       uint           `json:"order"`                              // Order within the course
+
+	Lessons     []Lesson       `json:"lessons" gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"` // One-to-many relationship
 }
