@@ -1,10 +1,10 @@
 package middlewares
 
 import (
+	"backend/database"
+	"backend/models"
+	"backend/utils"
 	"fmt"
-	"lms-go/database"
-	"lms-go/models"
-	"lms-go/utils"
 	"net/http"
 	"strings"
 

@@ -1,8 +1,8 @@
 package controllers
 
 import (
-	"lms-go/database"
-	"lms-go/models"
+	"backend/database"
+	"backend/models"
 	"net/http"
 	"os"
 	"path/filepath"

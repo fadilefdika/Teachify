@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"reflect"
 
-	"lms-go/models"
+	"backend/models"
 
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"

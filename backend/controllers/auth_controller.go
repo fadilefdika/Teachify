@@ -1,10 +1,10 @@
 package controllers
 
 import (
+	"backend/database"
+	"backend/models"
+	"backend/utils"
 	"fmt"
-	"lms-go/database"
-	"lms-go/models"
-	"lms-go/utils"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -106,17 +106,35 @@ func Login(c *gin.Context) {
     }
 
     // Generate JWT token
-    token, err := utils.GenerateJWT(user.ID,user.Role)
+    token, err := utils.GenerateJWT(user.ID, user.Role)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
         return
     }
 
-    c.JSON(http.StatusOK, gin.H{"token": token})
+    // Set HttpOnly cookie (secure: true jika HTTPS)
+    c.SetCookie(
+        "token", token,
+        3600,       // Expires in 1 hour (3600 seconds)
+        "/",        // Path
+        "localhost", // Domain, sesuaikan jika di production
+        false,      // Secure = false untuk dev, true jika HTTPS
+        true,       // HttpOnly
+    )
+
+    // Bisa juga kirim data user jika perlu
+    c.JSON(http.StatusOK, gin.H{"message": "Login successful"})
 }
+
 
 // Profile - Handler for fetching user profile
 func Profile(c *gin.Context) {
     user := c.MustGet("user").(models.User)
     c.JSON(http.StatusOK, gin.H{"user": user})
+}
+
+
+func Logout(c *gin.Context) {
+    c.SetCookie("token", "", -1, "/", "localhost", false, true)
+    c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
 }

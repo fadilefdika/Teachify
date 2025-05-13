@@ -1,9 +1,9 @@
 package main
 
 import (
+	"backend/database"
+	"backend/routes"
 	"fmt"
-	"lms-go/database"
-	"lms-go/routes"
 	"log"
 	"os"
 
@@ -12,7 +12,7 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger" // gin-swagger middleware
 
-	_ "lms-go/docs"
+	_ "backend/docs"
 )
 
 //	@title			Swagger Example API

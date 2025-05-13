@@ -8,8 +8,8 @@
 package controllers
 
 import (
-	"lms-go/database"
-	"lms-go/models"
+	"backend/database"
+	"backend/models"
 	"log"
 	"net/http"
 	"strconv"
