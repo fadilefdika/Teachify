@@ -95,13 +95,13 @@ func Login(c *gin.Context) {
 
     var user models.User
     if err := database.DB.Where("email = ?", input.Email).First(&user).Error; err != nil {
-        c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "Email not found"})
         return
     }
 
     // Check password hash
     if !utils.CheckPasswordHash(input.Password, user.Password) {
-        c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "Incorrect password"})
         return
     }
 
@@ -123,7 +123,7 @@ func Login(c *gin.Context) {
     )
 
     // Bisa juga kirim data user jika perlu
-    c.JSON(http.StatusOK, gin.H{"message": "Login successful"})
+    c.JSON(http.StatusOK, gin.H{"message": "Login successful","token" : token})
 }
 
 

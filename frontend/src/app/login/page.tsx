@@ -14,6 +14,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -22,7 +23,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/login`, {
+      const res = await fetch('http://localhost:3000/api/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -31,24 +32,27 @@ export default function LoginPage() {
       });
 
       if (!res.ok) {
-        throw new Error('Login failed');
+        const data = await res.json();
+        setError(data.error || 'Login failed'); // Pastikan error yang dikirim dari backend dapat ditangani
+        return; // Jangan lanjutkan jika login gagal
       }
 
       const data = await res.json();
 
-      // ✅ Simpan token ke cookie
+      // Set token di cookie jika login sukses
       Cookies.set('token', data.token, {
         path: '/',
         secure: true,
         sameSite: 'Lax',
       });
 
-      // ✅ Redirect ke dashboard
+      // Redirect ke dashboard setelah login sukses
       router.push('/dashboard');
     } catch (error) {
       console.error('Login failed:', error);
+      setError('Terjadi kesalahan saat login'); // Menampilkan pesan umum saat error di frontend
     } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Menghentikan loading state
     }
   };
 
@@ -89,7 +93,6 @@ export default function LoginPage() {
                 className="rounded-md border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none text-black"
               />
             </div>
-
             {/* Password */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -116,13 +119,13 @@ export default function LoginPage() {
                 </button>
               </div>
             </div>
-
             {/* Button */}
             <div>
               <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-300" disabled={isLoading}>
                 {isLoading ? 'Signing in...' : 'Sign in'}
               </Button>
             </div>
+            {error && <div className="error-message text-red-500 text-sm">*{error}</div>} {/* Tampilkan pesan error */}
           </form>
 
           {/* Footer */}
