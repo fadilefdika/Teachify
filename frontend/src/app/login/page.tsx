@@ -3,12 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { EyeIcon, EyeOffIcon, BookOpen } from 'lucide-react';
-import Cookies from 'js-cookie';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -21,6 +19,13 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError('');
+
+    if (!email || !password) {
+      setError('Email dan password wajib diisi');
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const res = await fetch('http://localhost:3000/api/login', {
@@ -29,30 +34,22 @@ export default function LoginPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password }),
+        credentials: 'include',
       });
-
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || 'Login failed'); // Pastikan error yang dikirim dari backend dapat ditangani
-        return; // Jangan lanjutkan jika login gagal
-      }
 
       const data = await res.json();
 
-      // Set token di cookie jika login sukses
-      Cookies.set('token', data.token, {
-        path: '/',
-        secure: true,
-        sameSite: 'Lax',
-      });
+      if (!res.ok) {
+        setError(data.error || 'Login gagal');
+        return;
+      }
 
-      // Redirect ke dashboard setelah login sukses
       router.push('/dashboard');
     } catch (error) {
       console.error('Login failed:', error);
-      setError('Terjadi kesalahan saat login'); // Menampilkan pesan umum saat error di frontend
+      setError('Terjadi kesalahan saat login');
     } finally {
-      setIsLoading(false); // Menghentikan loading state
+      setIsLoading(false);
     }
   };
 

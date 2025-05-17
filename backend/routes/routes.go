@@ -14,47 +14,39 @@ func SetupRoutes(r *gin.Engine) {
         // Auth routes
         api.POST("/register", controllers.Register)
         api.POST("/login", controllers.Login)
+        api.POST("/logout", controllers.Logout)
 
         // Protected routes
         authorized := api.Group("/")
         authorized.Use(middlewares.JWTAuthMiddleware())
         {
             authorized.GET("/dashboard", controllers.DashboardHandler)
+            authorized.GET("/profile", controllers.Profile)
 
-            // JWT Auth routes
-            apiAuth := authorized.Group("/")
-            apiAuth.Use(middlewares.JWTAuthMiddleware())
-            {
-                apiAuth.GET("/profile", controllers.Profile)
+            // Admin-only route (tambahkan middleware role di sini)
+            authorized.GET("/admin", middlewares.RequireRole("admin"), controllers.AdminOnlyHandler)
 
-                // Admin-only routes
-                apiAuth.GET("/admin", middlewares.RequireRole("admin"), controllers.AdminOnlyHandler)
+            // Courses
+            authorized.POST("/courses", controllers.CreateCourse)
+            authorized.GET("/courses", controllers.GetAllCourses)
+            authorized.GET("/courses/:id", controllers.GetCourseByID)
+            authorized.PUT("/courses/:id", controllers.UpdateCourse)
+            authorized.DELETE("/courses/:id", controllers.DeleteCourse)
 
-                // Courses
-                apiAuth.POST("/courses", controllers.CreateCourse)
-                apiAuth.GET("/courses", controllers.GetAllCourses)
-                apiAuth.GET("/courses/:id", controllers.GetCourseByID)
-                apiAuth.PUT("/courses/:id", controllers.UpdateCourse)
-                apiAuth.DELETE("/courses/:id", controllers.DeleteCourse)
+            // Modules
+            authorized.GET("/courses/:id/modules", controllers.GetModulesByCourse)
+            authorized.POST("/courses/:id/modules", controllers.CreateModule)
+            authorized.GET("/modules/:id", controllers.GetModuleByID)
+            authorized.PUT("/modules/:id", controllers.UpdateModule)
+            authorized.DELETE("/modules/:id", controllers.DeleteModule)
 
-                // Modules within a course
-                apiAuth.GET("/courses/:id/modules", controllers.GetModulesByCourse)
-                apiAuth.POST("/courses/:id/modules", controllers.CreateModule)
-
-                // Individual modules
-                apiAuth.GET("/modules/:id", controllers.GetModuleByID)
-                apiAuth.PUT("/modules/:id", controllers.UpdateModule)
-                apiAuth.DELETE("/modules/:id", controllers.DeleteModule)
-
-                // Lessons within a module
-                apiAuth.GET("/modules/:id/lessons", controllers.GetLessonsByModule)
-                apiAuth.POST("/modules/:id/lessons", controllers.CreateLessonForModule)
-                apiAuth.GET("/lessons/:id", controllers.GetLessonByID)
-                apiAuth.PUT("/lessons/:id", controllers.UpdateLesson)
-                apiAuth.DELETE("/lessons/:id", controllers.DeleteLesson)
-            }
+            // Lessons
+            authorized.GET("/modules/:id/lessons", controllers.GetLessonsByModule)
+            authorized.POST("/modules/:id/lessons", controllers.CreateLessonForModule)
+            authorized.GET("/lessons/:id", controllers.GetLessonByID)
+            authorized.PUT("/lessons/:id", controllers.UpdateLesson)
+            authorized.DELETE("/lessons/:id", controllers.DeleteLesson)
         }
     }
 }
-
 

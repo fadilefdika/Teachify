@@ -56,7 +56,7 @@ func Register(c *gin.Context) {
 	}
 
 	// Create new user
-	user := models.User{Name: input.Name, Email: input.Email, Password: hashedPassword, Role: input.Role}
+	user := models.User{Name: input.Name, Email: input.Email, Password: hashedPassword}
 
 	// Debug user yang akan disimpan
 	fmt.Println("DEBUG: User to be saved =>", user)
@@ -73,16 +73,18 @@ func Register(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
 		return
 	}
-
 	tx.Commit()
-
-	// Debug setelah berhasil simpan
-	fmt.Println("DEBUG: User created successfully with role =>", user.Role)
+	
+	token, err := utils.GenerateJWT(user.ID, user.Role)
+    if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+        return
+    }
+	c.SetCookie("token", token, 3600, "/", "localhost", false, true)
+	
 
 	c.JSON(http.StatusOK, gin.H{"message": "Registration successful"})
 }
-
-
 
 
 // Login - Handler for user login
@@ -117,7 +119,7 @@ func Login(c *gin.Context) {
         "token", token,
         3600,       // Expires in 1 hour (3600 seconds)
         "/",        // Path
-        "localhost", // Domain, sesuaikan jika di production
+        "", 
         false,      // Secure = false untuk dev, true jika HTTPS
         true,       // HttpOnly
     )

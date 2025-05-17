@@ -22,18 +22,10 @@ const Dashboard = async () => {
     redirect('/login');
   }
 
-  const data = await res.json();
-
-  // Cek role user
-  if (data.user?.role !== 'admin') {
-    // Jika bukan admin, redirect ke halaman lain
-    redirect('/unauthorized'); // kamu bisa buat halaman ini
-  }
-
   return (
     <div>
-      <h1>Dashboard Admin</h1>
-      <p>Selamat datang, {data.user?.name}!</p>
+      <h1 className="text-xl font-bold">Dashboard</h1>
+      <p>Selamat datang!</p>
     </div>
   );
 };

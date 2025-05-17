@@ -11,9 +11,9 @@ type User struct {
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"deleted_at" swaggerignore:"true"`
-	Name      string         `json:"name" validate:"required"`
+	Name      string         `json:"username" validate:"required"`
 	Email     string         `json:"email" gorm:"unique;not null" validate:"required,email"`
 	Password  string         `json:"password" gorm:"not null" validate:"required,min=8"`
-	Role      string         `json:"role" gorm:"default:'user'" validate:"required"` // ✅ tambahkan validate
+	Role      string         `json:"role" gorm:"default:'student'"` // ✅ tambahkan validate
 }
 
