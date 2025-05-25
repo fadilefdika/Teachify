@@ -75,7 +75,7 @@ func Register(c *gin.Context) {
 	}
 	tx.Commit()
 	
-	token, err := utils.GenerateJWT(user.ID, user.Role)
+	token, err := utils.GenerateJWT(user.ID,)
     if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
         return
@@ -101,42 +101,50 @@ func Login(c *gin.Context) {
         return
     }
 
-    // Check password hash
     if !utils.CheckPasswordHash(input.Password, user.Password) {
         c.JSON(http.StatusUnauthorized, gin.H{"error": "Incorrect password"})
         return
     }
 
-    // Generate JWT token
-    token, err := utils.GenerateJWT(user.ID, user.Role)
+    tokenString, err := utils.GenerateJWT(user.ID,)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
         return
     }
 
-    // Set HttpOnly cookie (secure: true jika HTTPS)
-    c.SetCookie(
-        "token", token,
-        3600,       // Expires in 1 hour (3600 seconds)
-        "/",        // Path
-        "", 
-        false,      // Secure = false untuk dev, true jika HTTPS
-        true,       // HttpOnly
-    )
+    // Set cookie — _PASTIKAN SESUAI_ DENGAN DOMAIN & HTTPS
+    http.SetCookie(c.Writer, &http.Cookie{
+        Name:     "token",
+        Value:    tokenString,
+        Path:     "/",
+        HttpOnly: true,
+        Secure:   false, // ubah ke true kalau pakai HTTPS di prod
+        SameSite: http.SameSiteLaxMode, // Bisa diubah ke None saat HTTPS
+        MaxAge:   3600,
+    })
 
-    // Bisa juga kirim data user jika perlu
-    c.JSON(http.StatusOK, gin.H{"message": "Login successful","token" : token})
+    c.JSON(http.StatusOK, gin.H{"message": "Login successful"})
 }
 
 
-// Profile - Handler for fetching user profile
-func Profile(c *gin.Context) {
-    user := c.MustGet("user").(models.User)
-    c.JSON(http.StatusOK, gin.H{"user": user})
-}
+
 
 
 func Logout(c *gin.Context) {
     c.SetCookie("token", "", -1, "/", "localhost", false, true)
     c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
+}
+
+// Profile - Handler for fetching user profile
+func Profile(c *gin.Context) {
+	// Ambil user dari context (diset di middleware)
+	user, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found in context"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"user": user.(models.User), // Pastikan type cast ke models.User
+	})
 }

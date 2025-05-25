@@ -15,6 +15,7 @@ func SetupRoutes(r *gin.Engine) {
         api.POST("/register", controllers.Register)
         api.POST("/login", controllers.Login)
         api.POST("/logout", controllers.Logout)
+       
 
         // Protected routes
         authorized := api.Group("/")

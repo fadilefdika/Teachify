@@ -1,69 +1,69 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 
-interface User {
-  username: string;
+type User = {
+  id: string;
+  name: string;
   email: string;
-  role: string;
-  avatarUrl?: string;
-}
+};
 
-interface AuthContextType {
+type AuthContextType = {
   user: User | null;
-  token: string | null;
-  loading: boolean;
-  error: string | null;
+  isLoading: boolean;
   logout: () => void;
-}
+};
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  isLoading: true,
+  logout: () => {},
+});
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    if (!storedToken) {
-      setLoading(false);
-      return;
-    }
-
-    async function fetchUser() {
-      try {
-        const res = await fetch('/api/profile', {
-          headers: { Authorization: `Bearer ${storedToken}` },
-          cache: 'no-store',
-        });
-        if (!res.ok) throw new Error('Failed to fetch user');
-        const data = await res.json();
-        setUser(data.user);
-        setToken(storedToken);
-      } catch (e: any) {
-        setError(e.message);
-        setToken(null);
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchUser();
+  const logout = useCallback(() => {
+    // tidak perlu nookies.destroy karena cookie HttpOnly tidak bisa dihapus dari client
+    setUser(null);
+    setIsLoading(false);
   }, []);
 
-  function logout() {
-    setToken(null);
-    setUser(null);
-    localStorage.removeItem('token');
-  }
+  const fetchUser = useCallback(
+    async (signal: AbortSignal) => {
+      try {
+        const res = await fetch('http://localhost:3000/api/profile', {
+          method: 'GET',
+          credentials: 'include',
+          signal,
+        });
 
-  return <AuthContext.Provider value={{ user, token, loading, error, logout }}>{children}</AuthContext.Provider>;
-}
+        if (!res.ok) throw new Error('Unauthorized');
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within AuthProvider');
-  return context;
-}
+        const data = await res.json();
+        setUser(data.user);
+        console.log('[AuthContext] User data:', data.user);
+      } catch (error: any) {
+        if (error.name !== 'AbortError') {
+          console.error('[AuthContext] Failed to fetch user:', error.message);
+          logout();
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [logout]
+  );
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchUser(controller.signal);
+
+    return () => controller.abort();
+  }, [fetchUser]);
+
+  return <AuthContext.Provider value={{ user, isLoading, logout }}>{children}</AuthContext.Provider>;
+};
+
+export const useAuth = () => useContext(AuthContext);

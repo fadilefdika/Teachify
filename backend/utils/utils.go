@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"time"
 
 	"os"
@@ -29,14 +30,15 @@ func GetJWTKey() []byte {
     return []byte(os.Getenv("JWT_SECRET_KEY"))
 }
 
-func GenerateJWT(userID uint, userRole string) (string, error) {
+func GenerateJWT(userID uint) (string, error) {
     token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
         "id": userID,
-        "role": userRole,
         "exp": time.Now().Add(time.Hour * 24).Unix(),
     })
 
     tokenString, err := token.SignedString(GetJWTKey())
+    fmt.Println("Token:", tokenString)
+
     return tokenString, err
 }
 
