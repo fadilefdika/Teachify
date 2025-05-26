@@ -1,3 +1,4 @@
+'use client';
 import '@/app/globals.css';
 
 // app/(auth)/layout.tsx

@@ -7,7 +7,6 @@ interface User {
   username: string;
   email: string;
   role: string;
-  // fields lain kalau perlu
 }
 
 export default function ProfilePage() {
@@ -16,39 +15,32 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    console.log('Token yang akan dikirim:', token);
+    const fetchUserProfile = async () => {
+      try {
+        const res = await fetch('http://localhost:3000/api/profile', {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
 
-    if (!token) {
-      console.error('Token tidak ditemukan di localStorage!');
-      setError('User not authenticated');
-      setLoading(false);
-      return;
-    }
-
-    fetch('http://localhost:3000/api/profile', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`, // Pastikan token dikirim sesuai format Bearer
-      },
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
         }
-        return response.json();
-      })
-      .then((data) => {
+
+        const data = await res.json();
         console.log('User profile:', data);
         setUser(data.user);
+      } catch (err: any) {
+        console.error('Error fetching profile:', err);
+        setError(err.message || 'Something went wrong');
+      } finally {
         setLoading(false);
-      })
-      .catch((error) => {
-        console.error('Error fetching profile:', error);
-        setError(error.message);
-        setLoading(false);
-      });
+      }
+    };
+
+    fetchUserProfile();
   }, []);
 
   if (loading) return <div>Loading profile...</div>;
@@ -58,9 +50,15 @@ export default function ProfilePage() {
   return (
     <div>
       <h1>Profile Page</h1>
-      <p>Username: {user.username}</p>
-      <p>Email: {user.email}</p>
-      <p>Role: {user.role}</p>
+      <p>
+        <strong>Username:</strong> {user.username}
+      </p>
+      <p>
+        <strong>Email:</strong> {user.email}
+      </p>
+      <p>
+        <strong>Role:</strong> {user.role}
+      </p>
     </div>
   );
 }
