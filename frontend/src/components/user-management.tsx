@@ -29,7 +29,7 @@ const users = [
     courses: 5,
     lastActive: '1 jam yang lalu',
     avatar: '/placeholder.svg?height=32&width=32',
-    roleColor: 'bg-violet-100 text-violet-800 dark:bg-violet-900/20 dark:text-violet-400',
+    roleColor: 'bg-violet-100 text-blue-800 dark:bg-violet-900/20 dark:text-blue-400',
   },
   {
     id: '3',
@@ -51,7 +51,7 @@ const users = [
     courses: 0,
     lastActive: '30 menit yang lalu',
     avatar: '/placeholder.svg?height=32&width=32',
-    roleColor: 'bg-violet-100 text-violet-800 dark:bg-violet-900/20 dark:text-violet-400',
+    roleColor: 'bg-violet-100 text-blue-800 dark:bg-violet-900/20 dark:text-blue-400',
   },
   {
     id: '5',
@@ -72,7 +72,7 @@ export function UserManagement() {
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-violet-600" />
+            <Users className="h-5 w-5 text-blue-600" />
             <div>
               <CardTitle className="text-xl font-bold">Manajemen Pengguna</CardTitle>
               <CardDescription>Kelola siswa, instruktur, dan admin</CardDescription>

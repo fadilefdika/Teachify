@@ -58,7 +58,7 @@ export function CourseOverview() {
     <Card className="lg:col-span-7 border-0 bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl">
       <CardHeader className="pb-4">
         <div className="flex items-center gap-2">
-          <TrendingUp className="h-5 w-5 text-violet-600" />
+          <TrendingUp className="h-5 w-5 text-blue-600" />
           <CardTitle className="text-xl font-bold">Overview Kursus</CardTitle>
         </div>
         <CardDescription>Statistik kursus yang sedang berjalan</CardDescription>

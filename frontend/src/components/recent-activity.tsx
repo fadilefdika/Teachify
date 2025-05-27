@@ -14,7 +14,7 @@ const activities = [
     avatar: '/placeholder.svg?height=32&width=32',
     type: 'completion',
     icon: Trophy,
-    color: 'text-violet-600',
+    color: 'text-blue-600',
     bgColor: 'bg-violet-100 dark:bg-violet-900/20',
   },
   {
@@ -36,7 +36,7 @@ const activities = [
     avatar: '/placeholder.svg?height=32&width=32',
     type: 'submission',
     icon: FileText,
-    color: 'text-violet-600',
+    color: 'text-blue-600',
     bgColor: 'bg-violet-100 dark:bg-violet-900/20',
   },
   {
@@ -58,7 +58,7 @@ const activities = [
     avatar: '/placeholder.svg?height=32&width=32',
     type: 'quiz',
     icon: CheckCircle,
-    color: 'text-violet-600',
+    color: 'text-blue-600',
     bgColor: 'bg-violet-100 dark:bg-violet-900/20',
   },
 ];
@@ -68,7 +68,7 @@ export function RecentActivity() {
     <Card className="lg:col-span-5 border-0 bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl">
       <CardHeader className="pb-4">
         <div className="flex items-center gap-2">
-          <Activity className="h-5 w-5 text-violet-600" />
+          <Activity className="h-5 w-5 text-blue-600" />
           <CardTitle className="text-xl font-bold">Aktivitas Terbaru</CardTitle>
         </div>
         <CardDescription>Aktivitas siswa dalam 24 jam terakhir</CardDescription>
@@ -99,7 +99,7 @@ export function RecentActivity() {
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {activity.action} <span className="font-medium text-violet-600">{activity.course}</span>
+                  {activity.action} <span className="font-medium text-blue-600">{activity.course}</span>
                 </p>
                 <p className="text-xs text-muted-foreground">{activity.time}</p>
               </div>

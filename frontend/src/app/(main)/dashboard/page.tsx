@@ -60,7 +60,7 @@ const Dashboard = () => {
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem className="hidden md:block">
-                <BreadcrumbLink href="#" className="text-violet-600 hover:text-violet-700">
+                <BreadcrumbLink href="#" className="text-blue-600 hover:text-blue-700">
                   Dashboard Admin
                 </BreadcrumbLink>
               </BreadcrumbItem>
@@ -85,7 +85,7 @@ const Dashboard = () => {
 
       <div className="flex flex-1 flex-col gap-6 p-6 pt-4">
         <div className="space-y-2">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">Dashboard EduVerse</h1>
+          <h1 className="text-4xl font-bold bg-gradient-to-r text-blue-500 bg-clip-text">Dashboard EduVerse</h1>
           <p className="text-lg text-muted-foreground">Selamat datang {user.name} di universe pembelajaran digital ✨</p>
         </div>
 
