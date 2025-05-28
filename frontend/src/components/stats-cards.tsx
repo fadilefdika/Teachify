@@ -10,8 +10,8 @@ const stats = [
     description: '+12% dari bulan lalu',
     icon: Users,
     trend: '+12%',
-    color: 'from-violet-500 to-purple-500',
-    bgColor: 'from-violet-500/10 to-purple-500/10',
+    color: 'bg-blue-500',
+    bgColor: 'bg-blue-500/10 ',
   },
   {
     title: 'Kursus Aktif',
@@ -28,8 +28,8 @@ const stats = [
     description: '+2 instruktur baru',
     icon: GraduationCap,
     trend: '+2',
-    color: 'from-violet-500 to-purple-500',
-    bgColor: 'from-violet-500/10 to-purple-500/10',
+    color: 'bg-blue-500',
+    bgColor: 'bg-blue-500/10',
   },
   {
     title: 'Pendapatan',
@@ -46,8 +46,8 @@ const stats = [
     description: '+5% dari bulan lalu',
     icon: TrendingUp,
     trend: '+5%',
-    color: 'from-violet-500 to-purple-500',
-    bgColor: 'from-violet-500/10 to-purple-500/10',
+    color: 'bg-blue-500',
+    bgColor: 'bg-blue-500/10',
   },
   {
     title: 'Sertifikat Diterbitkan',

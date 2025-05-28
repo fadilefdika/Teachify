@@ -65,7 +65,7 @@ export function ProfilePageContent({ user, onBack }: ProfilePageProps) {
               <div className="relative mx-auto">
                 <Avatar className="h-24 w-24 border-4 border-white shadow-lg">
                   <AvatarImage src="/placeholder.svg" alt="Admin User" />
-                  <AvatarFallback className="bg-gradient-to-br from-violet-500 to-purple-600 text-white text-2xl font-bold">{user.name?.charAt(0) || 'A'}</AvatarFallback>
+                  <AvatarFallback className="bg-gradient-to-br text-blue-500 text-2xl font-bold">{user.name?.charAt(0) || 'A'}</AvatarFallback>
                 </Avatar>
                 <Button size="icon" variant="outline" className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full bg-white shadow-lg hover:bg-gray-50">
                   <Camera className="h-4 w-4" />
@@ -148,7 +148,7 @@ export function ProfilePageContent({ user, onBack }: ProfilePageProps) {
               </div>
 
               <div className="flex gap-2 pt-4">
-                <Button className="rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700">Save Changes</Button>
+                <Button className="rounded-xl bg-gradient-to-r bg-blue-500 ">Save Changes</Button>
                 <Button variant="outline" className="rounded-xl">
                   Cancel
                 </Button>
@@ -181,7 +181,7 @@ export function ProfilePageContent({ user, onBack }: ProfilePageProps) {
             </div>
 
             <div className="flex gap-2 pt-4">
-              <Button className="rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700">Update Password</Button>
+              <Button className="rounded-xl bg-gradient-to-r bg-blue-500 ">Update Password</Button>
               <Button variant="outline" className="rounded-xl">
                 Enable 2FA
               </Button>

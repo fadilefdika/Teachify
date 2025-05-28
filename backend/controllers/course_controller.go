@@ -106,54 +106,78 @@ func GetCourseByID(c *gin.Context) {
 // @Security BearerAuth
 func CreateCourse(c *gin.Context) {
 	// Ambil data user dari context (diasumsikan sudah diset oleh middleware auth)
-	user, exists := c.Get("user") // user di-set sebelumnya via middleware
+	user, exists := c.Get("user")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
-	// Konversi ke struct User
+	// Konversi interface{} ke struct User
 	currentUser, ok := user.(models.User)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse user"})
 		return
 	}
 
-	// Cek apakah role-nya adalah instructor
+	// Cek apakah role user adalah instructor
 	if currentUser.Role != "instructor" {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Only instructors can create courses"})
 		return
 	}
 
-	var input models.Course
+	var input struct {
+		Title       string  `json:"title" binding:"required"`
+		Description string  `json:"description"`
+		ImageURL    string  `json:"image_url"`
+		Level       string  `json:"level"`
+		Duration    string  `json:"duration"`
+		Price       string  `json:"price"`
+		Status      string  `json:"status"`
+		Category    string  `json:"category"`
+		Lessons     int     `json:"lessons"`
+		Progress    int     `json:"progress"`
+		Rating      float64 `json:"rating"`
+		Students    int     `json:"students"`
+		LastUpdated string  `json:"last_updated"` // Bisa diganti time.Time jika perlu validasi waktu
+	}
 
-	// Bind input JSON
+	// Bind JSON ke input struct
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Buat course baru dengan ID instruktur dari user login
+	// Buat struct course untuk disimpan
 	course := models.Course{
 		Title:        input.Title,
 		Description:  input.Description,
 		ImageURL:     input.ImageURL,
-		InstructorID: currentUser.ID,
 		Level:        input.Level,
-		IsPublished:  input.IsPublished,
+		Duration:     input.Duration,
+		Price:        input.Price,
+		Status:       input.Status,
+		Category:     input.Category,
+		Lessons:      input.Lessons,
+		Progress:     input.Progress,
+		Rating:       input.Rating,
+		Students:     input.Students,
+		LastUpdated:  input.LastUpdated, // Jika perlu parse time, bisa gunakan time.Parse
+		InstructorID: currentUser.ID,
 	}
 
-	// Simpan ke DB
+	// Simpan course ke database
 	if err := database.DB.Create(&course).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
+	// Response sukses
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "Course created successfully",
 		"course":  course,
 	})
 }
+
 
 
 // UpdateCourse godoc
@@ -179,7 +203,7 @@ func UpdateCourse(c *gin.Context) {
 		return
 	}
 
-	// Ambil data user dari context
+	// Ambil user dari context
 	user, exists := c.Get("user")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
@@ -197,13 +221,21 @@ func UpdateCourse(c *gin.Context) {
 		return
 	}
 
-	// Struct input terpisah agar lebih aman
+	// Struct input update
 	type UpdateCourseInput struct {
-		Title       string `json:"title"`
-		Description string `json:"description"`
-		ImageURL    string `json:"image_url"`
-		Level       string `json:"level"`
-		IsPublished bool   `json:"is_published"`
+		Title       string  `json:"title"`
+		Description string  `json:"description"`
+		ImageURL    string  `json:"image_url"`
+		Level       string  `json:"level"`
+		Duration    string  `json:"duration"`
+		Price       string  `json:"price"`
+		Status      string  `json:"status"`
+		Category    string  `json:"category"`
+		Lessons     int     `json:"lessons"`
+		Progress    int     `json:"progress"`
+		Rating      float64 `json:"rating"`
+		Students    int     `json:"students"`
+		LastUpdated string  `json:"last_updated"`
 	}
 
 	var input UpdateCourseInput
@@ -212,33 +244,41 @@ func UpdateCourse(c *gin.Context) {
 		return
 	}
 
-	// Ambil course yang akan diupdate
+	// Ambil course dari DB
 	var course models.Course
 	if err := database.DB.First(&course, uint(id)).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Course not found"})
 		return
 	}
 
-	// Cek kepemilikan course
+	// Validasi kepemilikan course
 	if course.InstructorID != currentUser.ID {
 		c.JSON(http.StatusForbidden, gin.H{"error": "You are not authorized to update this course"})
 		return
 	}
 
-	// Update field
+	// Update semua field
 	course.Title = input.Title
 	course.Description = input.Description
 	course.ImageURL = input.ImageURL
 	course.Level = input.Level
-	course.IsPublished = input.IsPublished
+	course.Duration = input.Duration
+	course.Price = input.Price
+	course.Status = input.Status
+	course.Category = input.Category
+	course.Lessons = input.Lessons
+	course.Progress = input.Progress
+	course.Rating = input.Rating
+	course.Students = input.Students
+	course.LastUpdated = input.LastUpdated
 
-	// Simpan perubahan
+	// Simpan ke DB
 	if err := database.DB.Save(&course).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Preload relasi instructor sebelum response
+	// Preload relasi instructor jika perlu
 	if err := database.DB.Preload("Instructor").First(&course, course.ID).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch updated course with instructor"})
 		return
@@ -249,6 +289,7 @@ func UpdateCourse(c *gin.Context) {
 		"course":  course,
 	})
 }
+
 
 
 

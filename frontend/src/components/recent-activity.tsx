@@ -80,7 +80,7 @@ export function RecentActivity() {
               <div className="relative">
                 <Avatar className="h-10 w-10 border-2 border-white shadow-md">
                   <AvatarImage src={activity.avatar || '/placeholder.svg'} alt={activity.user} />
-                  <AvatarFallback className="bg-gradient-to-br from-violet-500 to-purple-600 text-white font-semibold">
+                  <AvatarFallback className="bg-gradient-to-br text-blue-500 font-semibold">
                     {activity.user
                       .split(' ')
                       .map((n) => n[0])

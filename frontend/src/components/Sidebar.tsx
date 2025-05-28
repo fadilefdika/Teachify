@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
+import { usePathname } from 'next/navigation';
 
 const navigationItems = [
   {
@@ -24,14 +25,8 @@ const navigationItems = [
   },
   {
     title: 'Courses',
-    url: '#',
+    url: '/course',
     icon: BookOpen,
-    color: 'text-blue-600',
-  },
-  {
-    title: 'Instructors',
-    url: '#',
-    icon: GraduationCap,
     color: 'text-blue-600',
   },
   {
@@ -100,6 +95,7 @@ export function AppSidebar() {
   const router = useRouter();
   const { logout } = useAuth();
   const { user, isLoading } = useAuth();
+  const pathname = usePathname();
 
   const handleLogout = async () => {
     await logout();
@@ -138,7 +134,7 @@ export function AppSidebar() {
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       asChild
-                      isActive={item.title === 'Dashboard'}
+                      isActive={pathname.startsWith(item.url)}
                       className="group relative overflow-hidden rounded-xl transition-all duration-200 hover:bg-white/60 dark:hover:bg-gray-800/60 data-[active=true]:bg-gradient-to-r data-[active=true]:from-blue-500/10 data-[active=true]:to-blue-500/10 data-[active=true]:border data-[active=true]:border-blue-200 dark:data-[active=true]:border-blue-800"
                     >
                       <Link href={item.url} className="flex items-center gap-3 p-2">

@@ -83,7 +83,7 @@ export function UserManagement() {
               <Filter className="mr-2 h-4 w-4" />
               Filter
             </Button>
-            <Button className="rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 shadow-lg">
+            <Button className="rounded-xl bg-gradient-to-r bg-blue-500  shadow-lg">
               <UserPlus className="mr-2 h-4 w-4" />
               Tambah Pengguna
             </Button>
@@ -110,7 +110,7 @@ export function UserManagement() {
                     <div className="flex items-center space-x-3">
                       <Avatar className="h-10 w-10 border-2 border-white shadow-md">
                         <AvatarImage src={user.avatar || '/placeholder.svg'} alt={user.name} />
-                        <AvatarFallback className="bg-gradient-to-br from-violet-500 to-purple-600 text-white font-semibold">
+                        <AvatarFallback className="bg-gradient-to-br text-blue-500 font-semibold">
                           {user.name
                             .split(' ')
                             .map((n) => n[0])
