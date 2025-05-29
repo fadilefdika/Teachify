@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { EyeIcon, EyeOffIcon, BookOpen } from 'lucide-react';
-import AuthLayout from './layout';
+import AuthLayout from '../layout';
 
 export default function RegisterPage() {
   const router = useRouter();

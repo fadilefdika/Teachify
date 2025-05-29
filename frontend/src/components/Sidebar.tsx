@@ -19,7 +19,7 @@ const navigationItems = [
   },
   {
     title: 'Users',
-    url: '#',
+    url: '/users',
     icon: Users,
     color: 'text-blue-600',
   },
