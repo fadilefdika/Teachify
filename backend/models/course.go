@@ -3,32 +3,33 @@ package models
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 // Course represents a learning course
 type Course struct {
-	ID           uint           `json:"id" gorm:"primaryKey"`
-	CreatedAt    time.Time      `json:"created_at"`
-	UpdatedAt    time.Time      `json:"updated_at"`
-	DeletedAt    gorm.DeletedAt `json:"deleted_at" gorm:"index" swaggerignore:"true"`
+	ID           uuid.UUID      `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	DeletedAt    gorm.DeletedAt `gorm:"index"`
 
 	Title        string         `json:"title" binding:"required"`
 	Description  string         `json:"description"`
-	ImageURL     string         `json:"image_url"` // thumbnail
-	Level        string         `json:"level"`     // Beginner, Intermediate, etc.
-	Duration     string         `json:"duration"`  // "8 weeks"
-	Price        string         `json:"price"`     // "$99"
-	Status       string         `json:"status"`    // "Active", "Draft", etc.
-	Category     string         `json:"category"`  // Frontend, Backend, etc.
-	Lessons      int            `json:"lessons"`   // total lessons
-	Progress     int            `json:"progress"`  // progress percentage (0-100)
-	Rating       float64        `json:"rating"`    // e.g., 4.8
-	Students     int            `json:"students"`  // enrolled students
-	LastUpdated  string         `json:"last_updated"` // optional: bisa jadi time.Time
+	ImageURL     string         `json:"image_url"`
+	Level        string         `json:"level"`
+	Duration     string         `json:"duration"`
+	Price        string         `json:"price"`
+	Status       string         `json:"status"`
+	Category     string         `json:"category"`
+	Lessons      int            `json:"lessons"`
+	Progress     int            `json:"progress"`
+	Rating       float64        `json:"rating"`
+	Students     int            `json:"students"`
+	LastUpdated  string         `json:"last_updated"`
 
-	InstructorID uint           `json:"instructor_id"`
-	Instructor   User           `json:"instructor" gorm:"foreignKey:InstructorID"`
+	CreatorId    uuid.UUID      `json:"creator_id"`
+	Creator      User           `json:"creator" gorm:"foreignKey:CreatorId"`
 
 	Modules      []Module       `json:"modules" gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 }

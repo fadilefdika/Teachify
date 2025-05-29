@@ -3,17 +3,28 @@ package models
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
-type User struct {
-	ID        uint           `json:"id"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `json:"deleted_at" swaggerignore:"true"`
-	Name      string         `json:"username" validate:"required"`
-	Email     string         `json:"email" gorm:"unique;not null" validate:"required,email"`
-	Password  string         `json:"password" gorm:"not null" validate:"required,min=8"`
-	Role      string         `json:"role" gorm:"default:'student'"` // ✅ tambahkan validate
-}
+type Role string
 
+const (
+	RoleUser    Role = "user"
+	RoleCreator Role = "creator"
+)
+
+type User struct {
+	ID 		   uuid.UUID 	`gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	Username       string         `gorm:"type:varchar(100);not null"`
+	Email      string         `gorm:"uniqueIndex;type:varchar(100);not null"`
+	Password   string         `gorm:"type:varchar(255);not null"`
+	Role       Role           `gorm:"type:varchar(20);not null"`
+	IsApproved bool           `gorm:"default:true"` // false untuk creator yang belum disetujui
+	Status     string         `gorm:"type:varchar(20);default:'active'"` // active, blocked, etc.
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+	DeletedAt  gorm.DeletedAt `gorm:"index"`
+
+	CreatorProfile *CreatorProfile `gorm:"foreignKey:UserID"`
+}

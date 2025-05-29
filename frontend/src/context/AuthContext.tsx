@@ -24,10 +24,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const logout = useCallback(() => {
-    // tidak perlu nookies.destroy karena cookie HttpOnly tidak bisa dihapus dari client
-    setUser(null);
-    setIsLoading(false);
+  const logout = useCallback(async () => {
+    try {
+      await fetch('http://localhost:3000/api/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setUser(null);
+      setIsLoading(false);
+    }
   }, []);
 
   const fetchUser = useCallback(

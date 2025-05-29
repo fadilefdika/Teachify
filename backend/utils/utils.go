@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -30,7 +31,7 @@ func GetJWTKey() []byte {
     return []byte(os.Getenv("JWT_SECRET_KEY"))
 }
 
-func GenerateJWT(userID uint) (string, error) {
+func GenerateJWT(userID uuid.UUID) (string, error) {
     token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
         "id": userID,
         "exp": time.Now().Add(time.Hour * 24).Unix(),

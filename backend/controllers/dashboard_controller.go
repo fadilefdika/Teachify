@@ -23,13 +23,13 @@ func DashboardHandler(c *gin.Context) {
 		return
 	}
 
-	fmt.Printf("DEBUG: Dashboard accessed by user ID=%d, Name=%s, Email=%s, Role=%s\n", u.ID, u.Name, u.Email, u.Role)
+	fmt.Printf("DEBUG: Dashboard accessed by user ID=%d, Username=%s, Email=%s, Role=%s\n", u.ID, u.Username, u.Email, u.Role)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Welcome to the dashboard!",
 		"user": gin.H{
 			"id":    u.ID,
-			"name":  u.Name,
+			"username":  u.Username,
 			"email": u.Email,
 			"role":  u.Role,
 		},

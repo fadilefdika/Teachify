@@ -31,7 +31,7 @@ export default function LoginPage() {
     try {
       const res = await fetch('http://localhost:3000/api/login', {
         method: 'POST',
-        credentials: 'include', // penting agar cookie diterima
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -39,6 +39,7 @@ export default function LoginPage() {
       });
 
       const data = await res.json();
+      console.log('Login response:', data);
 
       if (!res.ok) {
         setError(data.error || 'Login gagal');
@@ -46,7 +47,11 @@ export default function LoginPage() {
         return;
       }
 
-      router.push('/dashboard');
+      if (data.user.needsCompletion) {
+        router.push('/dashboard');
+      } else {
+        router.push('/complete-profile');
+      }
     } catch (error) {
       console.error('Login failed:', error);
       setError('Terjadi kesalahan saat login');

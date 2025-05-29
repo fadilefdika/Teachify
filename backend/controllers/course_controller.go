@@ -162,7 +162,7 @@ func CreateCourse(c *gin.Context) {
 		Rating:       input.Rating,
 		Students:     input.Students,
 		LastUpdated:  input.LastUpdated, // Jika perlu parse time, bisa gunakan time.Parse
-		InstructorID: currentUser.ID,
+		CreatorId: currentUser.ID,
 	}
 
 	// Simpan course ke database
@@ -252,7 +252,7 @@ func UpdateCourse(c *gin.Context) {
 	}
 
 	// Validasi kepemilikan course
-	if course.InstructorID != currentUser.ID {
+	if course.CreatorId != currentUser.ID {
 		c.JSON(http.StatusForbidden, gin.H{"error": "You are not authorized to update this course"})
 		return
 	}

@@ -4,11 +4,12 @@ import (
 	"backend/database"
 	"backend/models"
 	"backend/utils"
-	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 )
 
 var validate *validator.Validate
@@ -18,116 +19,133 @@ func init() {
 	validate = validator.New()
 }
 
-// Register - Handler for user registration
 func Register(c *gin.Context) {
-	var input models.User
+	type RegisterInput struct {
+		Username string `json:"username" binding:"required"`
+		Email    string `json:"email" binding:"required,email"`
+		Password string `json:"password" binding:"required,min=6"`
+		Role     string `json:"role" binding:"required,oneof=user creator"`
+	}
 
-	// Bind JSON input and validate
+	var input RegisterInput
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON format"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Debug input dari request
-	fmt.Println("DEBUG: Input from JSON =>", input)
-
-	// Validate input using validator
-	if err := validate.Struct(&input); err != nil {
-		var errorMessages []string
-		for _, err := range err.(validator.ValidationErrors) {
-			errorMessages = append(errorMessages, err.Field()+" failed validation: "+err.Tag())
-		}
-		c.JSON(http.StatusBadRequest, gin.H{"error": errorMessages})
-		return
-	}
-
-	// Check if email already exists
-	var existingUser models.User
-	if err := database.DB.Where("email = ?", input.Email).First(&existingUser).Error; err == nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "Email is already registered"})
+	// Cek apakah email sudah terdaftar
+	var existing models.User
+	if err := database.DB.Where("email = ?", input.Email).First(&existing).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "Email sudah terdaftar"})
 		return
 	}
 
 	// Hash password
 	hashedPassword, err := utils.HashPassword(input.Password)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal hash password"})
 		return
 	}
 
-	// Create new user
-	user := models.User{Name: input.Name, Email: input.Email, Password: hashedPassword}
+	// Atur isApproved sesuai role (creator harus menunggu approval)
+	isApproved := true
+	if input.Role == "creator" {
+		isApproved = false
+	}
 
-	// Debug user yang akan disimpan
-	fmt.Println("DEBUG: User to be saved =>", user)
+	user := models.User{
+		ID:         uuid.New(),
+		Username:   input.Username,
+		Email:      input.Email,
+		Password:   hashedPassword,
+		Role:       models.Role(input.Role),
+		IsApproved: isApproved,
+		Status:     "active",
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
+	}
 
-	// Start transaction
-	tx := database.DB.Begin()
-	if tx.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
+	if err := database.DB.Create(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal membuat user"})
 		return
 	}
 
-	if err := tx.Create(&user).Error; err != nil {
-		tx.Rollback()
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+	token, err := utils.GenerateJWT(user.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal generate token"})
 		return
 	}
-	tx.Commit()
-	
-	token, err := utils.GenerateJWT(user.ID,)
-    if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
-        return
-    }
+
 	c.SetCookie("token", token, 3600, "/", "localhost", false, true)
-	
 
-	c.JSON(http.StatusOK, gin.H{"message": "Registration successful"})
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Register berhasil",
+		"userId":  user.ID,
+		"role":    user.Role,
+	})
 }
 
 
-// Login - Handler for user login
 func Login(c *gin.Context) {
-    var input models.User
-    if err := c.ShouldBindJSON(&input); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-        return
-    }
+	type LoginInput struct {
+		Email    string `json:"email" binding:"required,email"`
+		Password string `json:"password" binding:"required"`
+	}
 
-    var user models.User
-    if err := database.DB.Where("email = ?", input.Email).First(&user).Error; err != nil {
-        c.JSON(http.StatusUnauthorized, gin.H{"error": "Email not found"})
-        return
-    }
+	var input LoginInput
 
-    if !utils.CheckPasswordHash(input.Password, user.Password) {
-        c.JSON(http.StatusUnauthorized, gin.H{"error": "Incorrect password"})
-        return
-    }
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input: " + err.Error()})
+		return
+	}
 
-    tokenString, err := utils.GenerateJWT(user.ID,)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
-        return
-    }
+	var user models.User
+	if err := database.DB.Where("email = ?", input.Email).First(&user).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
+		return
+	}
 
-    // Set cookie — _PASTIKAN SESUAI_ DENGAN DOMAIN & HTTPS
-    http.SetCookie(c.Writer, &http.Cookie{
-        Name:     "token",
-        Value:    tokenString,
-        Path:     "/",
-        HttpOnly: true,
-        Secure:   false, // ubah ke true kalau pakai HTTPS di prod
-        SameSite: http.SameSiteLaxMode, // Bisa diubah ke None saat HTTPS
-        MaxAge:   3600,
-    })
+	if !utils.CheckPasswordHash(input.Password, user.Password) {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
+		return
+	}
 
-    c.JSON(http.StatusOK, gin.H{"message": "Login successful"})
+	// Generate JWT
+	tokenString, err := utils.GenerateJWT(user.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		return
+	}
+
+	// Set cookie
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     "token",
+		Value:    tokenString,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   3600,
+	})
+
+	// Tentukan apakah creator harus melengkapi profil
+	needsCompleteProfile := false
+	if user.Role == models.RoleCreator && !user.IsApproved {
+		needsCompleteProfile = true
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Login successful",
+		"user": gin.H{
+			"id":             user.ID,
+			"username":       user.Username,
+			"email":          user.Email,
+			"role":           user.Role,
+			"isApproved":     user.IsApproved,
+			"needsCompletion": needsCompleteProfile,
+		},
+	})
 }
-
-
-
 
 
 func Logout(c *gin.Context) {
@@ -147,4 +165,57 @@ func Profile(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"user": user.(models.User), // Pastikan type cast ke models.User
 	})
+}
+
+func CompleteCreatorProfile(c *gin.Context) {
+	type CreatorProfileInput struct {
+		UserID       uuid.UUID `json:"user_id" binding:"required"`
+		PhoneNumber  string    `json:"phone_number" binding:"required"`
+		Address      string    `json:"address" binding:"required"`
+		KTPUrl       string    `json:"ktp_url" binding:"required"`
+		CVUrl        string    `json:"cv_url" binding:"required"`
+		PortfolioUrl string    `json:"portfolio_url"`
+		BankAccount  string    `json:"bank_account"`
+	}
+
+	var input CreatorProfileInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Pastikan User dengan role creator dan user_id ini ada
+	var user models.User
+	if err := database.DB.First(&user, "id = ? AND role = ?", input.UserID, "creator").Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User creator tidak ditemukan"})
+		return
+	}
+
+	// Cek apakah sudah ada creator profile untuk user ini
+	var existingProfile models.CreatorProfile
+	if err := database.DB.Where("user_id = ?", input.UserID).First(&existingProfile).Error; err == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Profil creator sudah pernah dibuat"})
+		return
+	}
+
+	creatorProfile := models.CreatorProfile{
+		ID:           uuid.New(),
+		UserID:       input.UserID,
+		PhoneNumber:  input.PhoneNumber,
+		Address:      input.Address,
+		KTPUrl:       input.KTPUrl,
+		CVUrl:        input.CVUrl,
+		PortfolioUrl: input.PortfolioUrl,
+		BankAccount:  input.BankAccount,
+		Status:       "pending",
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
+	}
+
+	if err := database.DB.Create(&creatorProfile).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyimpan profil creator"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Profil creator berhasil disimpan"})
 }
