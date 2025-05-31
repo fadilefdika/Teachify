@@ -2,6 +2,7 @@ package routes
 
 import (
 	"backend/controllers"
+	"backend/handlers"
 
 	"backend/middlewares"
 
@@ -16,6 +17,7 @@ func SetupRoutes(r *gin.Engine) {
         api.POST("/login", controllers.Login)
         api.POST("/logout", controllers.Logout)
         api.POST("/complete-profile",controllers.CompleteCreatorProfile)
+        api.GET("/presigned-url", handlers.GeneratePresignedURL)
        
 
         // Protected routes

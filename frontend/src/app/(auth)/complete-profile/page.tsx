@@ -1,111 +1,192 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useRouter } from 'next/navigation';
+import { ScrollArea } from '@radix-ui/react-scroll-area';
 
-export default function CompleteProfilePage() {
-  const router = useRouter();
+// Dummy uploader, ganti dengan endpoint asli kamu
+async function uploadToS3(file: File, folder: string): Promise<string> {
+  const fileName = `${folder}${Date.now()}_${file.name}`;
+  const res = await fetch(`http://localhost:3000/presigned-url?filename=${encodeURIComponent(fileName)}`);
 
+  if (!res.ok) throw new Error('Failed to get presigned URL');
+
+  const data = await res.json();
+
+  const uploadRes = await fetch(data.url, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': file.type,
+    },
+    body: file,
+  });
+
+  if (!uploadRes.ok) throw new Error('Failed to upload to S3');
+
+  // Return clean S3 URL (tanpa tanda tanya)
+  return data.url.split('?')[0];
+}
+
+export default function CreatorRegistrationForm() {
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [address, setAddress] = useState('');
   const [ktpFile, setKtpFile] = useState<File | null>(null);
   const [cvFile, setCvFile] = useState<File | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [selfieFile, setSelfieFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setFile: (file: File | null) => void) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
-    }
-  };
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!phoneNumber || !address || !ktpFile || !cvFile) {
-      setError('Please fill all required fields and upload all documents.');
-      return;
-    }
-
     setIsLoading(true);
     setError(null);
 
-    // Buat form data untuk upload file
-    const formData = new FormData();
-    formData.append('phoneNumber', phoneNumber);
-    formData.append('address', address);
-    formData.append('ktp', ktpFile);
-    formData.append('cv', cvFile);
+    if (!ktpFile || !cvFile || !selfieFile || !phoneNumber || !address) {
+      setError('Please complete all required fields');
+      setIsLoading(false);
+      return;
+    }
 
     try {
-      const res = await fetch('/api/complete-profile', {
+      const ktpUrl = await uploadToS3(ktpFile, 'creator-ktp/');
+      const cvUrl = await uploadToS3(cvFile, 'creator-cv/');
+      const selfieUrl = await uploadToS3(selfieFile, 'creator-selfie/');
+
+      const payload = {
+        phoneNumber,
+        address,
+        ktpUrl,
+        cvUrl,
+        selfieUrl, // ditambahkan
+      };
+
+      const res = await fetch('http://localhost:3000/api/complete-profile', {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error || 'Failed to submit profile');
-        setIsLoading(false);
+        setError(data.error || 'Submission failed.');
         return;
       }
 
-      // Redirect ke dashboard setelah submit sukses
       router.push('/dashboard');
-    } catch (error) {
-      setError('Something went wrong, please try again.');
+    } catch (err) {
+      setError('Something went wrong. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12">
-      <div className="w-full max-w-lg bg-white rounded-xl shadow-lg p-8">
-        <h1 className="text-2xl font-semibold mb-6 text-center">Complete Your Profile</h1>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Phone Number */}
-          <div>
-            <Label htmlFor="phoneNumber" className="block text-gray-700 mb-1">
-              Phone Number
-            </Label>
-            <Input id="phoneNumber" type="text" placeholder="08123456789" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} required />
-          </div>
-          {/* Address */}
-          <div>
-            <Label htmlFor="address" className="block text-gray-700 mb-1">
-              Address
-            </Label>
-            <Input id="address" type="text" placeholder="Your Address" value={address} onChange={(e) => setAddress(e.target.value)} required />
-          </div>
-          {/* KTP Upload */}
-          <div>
-            <Label htmlFor="ktp" className="block text-gray-700 mb-1">
-              Upload KTP
-            </Label>
-            <input id="ktp" type="file" accept="image/*,application/pdf" onChange={(e) => handleFileChange(e, setKtpFile)} required className="block w-full text-sm text-gray-600" />
-            {ktpFile && <p className="mt-1 text-sm text-gray-700">Selected: {ktpFile.name}</p>}
-          </div>
-          {/* CV Upload */}
-          <div>
-            <Label htmlFor="cv" className="block text-gray-700 mb-1">
-              Upload CV
-            </Label>
-            <input id="cv" type="file" accept="application/pdf" onChange={(e) => handleFileChange(e, setCvFile)} required className="block w-full text-sm text-gray-600" />
-            {cvFile && <p className="mt-1 text-sm text-gray-700">Selected: {cvFile.name}</p>}
-          </div>
-          {/* Error message */}
-          {error && <p className="text-red-600 text-sm">{error}</p>}
-
-          {/* Submit Button */}
-          <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={isLoading}>
-            {isLoading ? 'Submitting...' : 'Submit Profile'}
-          </Button>
-        </form>
+    <form onSubmit={handleSubmit} className="w-full m-4 p-10 bg-white rounded-2xl shadow-xl border border-gray-200 space-y-10 transition-all">
+      <div className="space-y-2">
+        <h1 className="text-4xl font-bold text-gray-900">Become a Creator</h1>
+        <p className="text-gray-500 text-lg">Fill in the form below to register as a course creator.</p>
       </div>
-    </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="space-y-2">
+          <Label htmlFor="phone">Phone Number</Label>
+          <Input id="phone" name="phone" required value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="bankAccount">Bank Account (optional)</Label>
+          <Input id="bankAccount" name="bankAccount" />
+        </div>
+
+        <div className="space-y-2 md:col-span-2">
+          <Label htmlFor="address">Full Address</Label>
+          <Textarea id="address" name="address" rows={3} required value={address} onChange={(e) => setAddress(e.target.value)} />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="ktp">Upload National ID (KTP)</Label>
+          <Input id="ktp" name="ktp" type="file" accept="image/*" required onChange={(e) => setKtpFile(e.target.files?.[0] || null)} />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="selfie">Upload Selfie with ID</Label>
+          <Input id="selfie" name="selfie" type="file" accept="image/*" required onChange={(e) => setSelfieFile(e.target.files?.[0] || null)} />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="cv">Upload CV (PDF)</Label>
+          <Input id="cv" name="cv" type="file" accept=".pdf" required onChange={(e) => setCvFile(e.target.files?.[0] || null)} />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="portfolio">Portfolio URL (optional)</Label>
+          <Input id="portfolio" name="portfolio" type="url" />
+        </div>
+
+        <div className="space-y-2 md:col-span-2">
+          <Label htmlFor="socialMedia">Social Media</Label>
+          <Input id="socialMedia" name="socialMedia" type="url" />
+        </div>
+
+        <div className="space-y-2 md:col-span-2">
+          <Label htmlFor="biography">Short Biography</Label>
+          <Textarea id="biography" name="biography" rows={4} required />
+        </div>
+      </div>
+
+      <div className="flex items-start space-x-3">
+        <Checkbox id="terms" checked={termsAccepted} onCheckedChange={(v) => setTermsAccepted(!!v)} />
+        <Label htmlFor="terms" className="text-sm text-gray-700">
+          I agree to the{' '}
+          <Dialog>
+            <DialogTrigger className="text-blue-600 underline hover:text-blue-800 transition">terms and conditions</DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-screen overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Terms & Conditions for Course Creators</DialogTitle>
+              </DialogHeader>
+              <ScrollArea className="h-[400px] pr-4">
+                <div className="text-sm text-gray-700 space-y-4 mt-4">
+                  <p>Welcome to our Creator Program. By registering, you agree to the following terms:</p>
+                  <ol className="list-decimal list-inside space-y-2">
+                    <li>
+                      <strong>Content Ownership:</strong> You retain ownership of the courses you upload, but grant us non-exclusive rights to distribute and display them.
+                    </li>
+                    <li>
+                      <strong>Content Guidelines:</strong> Your content must not contain harmful, misleading, or plagiarized material. We reserve the right to remove any content that violates these guidelines.
+                    </li>
+                    <li>
+                      <strong>Payments:</strong> Revenue sharing is based on net revenue and will be paid monthly. You are responsible for providing accurate payment information.
+                    </li>
+                    <li>
+                      <strong>Code of Conduct:</strong> Be respectful to learners and the community. Harassment or abuse of any kind will result in removal.
+                    </li>
+                    <li>
+                      <strong>Termination:</strong> We may terminate your account if you violate any of these terms.
+                    </li>
+                  </ol>
+                  <p>For any questions, feel free to contact our support team. These terms are subject to change at any time.</p>
+                </div>
+              </ScrollArea>
+            </DialogContent>
+          </Dialog>
+        </Label>
+      </div>
+
+      {error && <p className="text-red-500 text-sm">{error}</p>}
+
+      <div className="pt-4">
+        <Button type="submit" disabled={!termsAccepted || isLoading} className="w-full md:w-fit px-8 py-3 text-lg">
+          {isLoading ? 'Submitting...' : 'Submit Registration'}
+        </Button>
+      </div>
+    </form>
   );
 }
