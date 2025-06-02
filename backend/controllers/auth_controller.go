@@ -169,53 +169,60 @@ func Profile(c *gin.Context) {
 
 func CompleteCreatorProfile(c *gin.Context) {
 	type CreatorProfileInput struct {
-		UserID       uuid.UUID `json:"user_id" binding:"required"`
-		PhoneNumber  string    `json:"phone_number" binding:"required"`
-		Address      string    `json:"address" binding:"required"`
-		KTPUrl       string    `json:"ktp_url" binding:"required"`
-		CVUrl        string    `json:"cv_url" binding:"required"`
-		PortfolioUrl string    `json:"portfolio_url"`
-		BankAccount  string    `json:"bank_account"`
+		UserID      string `json:"userId" binding:"required"`
+		PhoneNumber string `json:"phoneNumber" binding:"required"`
+		Address     string `json:"address" binding:"required"`
+		KTPUrl      string `json:"ktpUrl" binding:"required"`
+		CVUrl       string `json:"cvUrl" binding:"required"`
+		SelfieUrl   string `json:"selfieUrl" binding:"required"`
 	}
 
 	var input CreatorProfileInput
+
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Pastikan User dengan role creator dan user_id ini ada
 	var user models.User
 	if err := database.DB.First(&user, "id = ? AND role = ?", input.UserID, "creator").Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User creator tidak ditemukan"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "User dengan role creator tidak ditemukan"})
 		return
 	}
 
-	// Cek apakah sudah ada creator profile untuk user ini
 	var existingProfile models.CreatorProfile
 	if err := database.DB.Where("user_id = ?", input.UserID).First(&existingProfile).Error; err == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Profil creator sudah pernah dibuat"})
 		return
 	}
 
-	creatorProfile := models.CreatorProfile{
-		ID:           uuid.New(),
-		UserID:       input.UserID,
-		PhoneNumber:  input.PhoneNumber,
-		Address:      input.Address,
-		KTPUrl:       input.KTPUrl,
-		CVUrl:        input.CVUrl,
-		PortfolioUrl: input.PortfolioUrl,
-		BankAccount:  input.BankAccount,
-		Status:       "pending",
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
+	parsedUserID, err := uuid.Parse(input.UserID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "UserID tidak valid"})
+		return
 	}
 
+	creatorProfile := models.CreatorProfile{
+		UserID:      parsedUserID,
+		PhoneNumber: input.PhoneNumber,
+		Address:     input.Address,
+		KTPUrl:      input.KTPUrl,
+		CVUrl:       input.CVUrl,
+		SelfieUrl:   input.SelfieUrl,
+		Status:      "pending",
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+	}
+	
+
 	if err := database.DB.Create(&creatorProfile).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyimpan profil creator"})
+		// Tampilkan error asli supaya bisa didiagnosa
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Profil creator berhasil disimpan"})
 }
+
+
+

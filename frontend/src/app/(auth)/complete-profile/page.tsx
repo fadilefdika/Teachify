@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import { ScrollArea } from '@radix-ui/react-scroll-area';
 // Dummy uploader, ganti dengan endpoint asli kamu
 async function uploadToS3(file: File, folder: string): Promise<string> {
   const fileName = `${folder}${Date.now()}_${file.name}`;
-  const res = await fetch(`http://localhost:3000/presigned-url?filename=${encodeURIComponent(fileName)}`);
+  const res = await fetch(`http://localhost:3000/api/presigned-url?filename=${encodeURIComponent(fileName)}`);
 
   if (!res.ok) throw new Error('Failed to get presigned URL');
 
@@ -44,6 +44,16 @@ export default function CreatorRegistrationForm() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
+  const [userId, setUserId] = useState<string>(''); // contoh
+
+  // Misal ambil userId dari localStorage saat component mount
+  useEffect(() => {
+    const storedUserId = localStorage.getItem('userId');
+    if (storedUserId) {
+      setUserId(storedUserId);
+    }
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -61,12 +71,15 @@ export default function CreatorRegistrationForm() {
       const selfieUrl = await uploadToS3(selfieFile, 'creator-selfie/');
 
       const payload = {
+        userId,
         phoneNumber,
         address,
         ktpUrl,
         cvUrl,
         selfieUrl, // ditambahkan
       };
+
+      console.log('Payload JSON:', JSON.stringify(payload));
 
       const res = await fetch('http://localhost:3000/api/complete-profile', {
         method: 'POST',

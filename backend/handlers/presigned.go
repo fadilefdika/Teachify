@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -32,8 +33,10 @@ func initS3Client() (*s3.Client, error) {
 }
 
 func GeneratePresignedURL(c *gin.Context) {
-	key := c.Query("key")
-	if key == "" {
+	filename := c.Query("filename")
+	fmt.Println("Requested filename:", filename)
+
+	if filename == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing key parameter"})
 		return
 	}
@@ -49,7 +52,7 @@ func GeneratePresignedURL(c *gin.Context) {
 
 	req, err := presignClient.PresignPutObject(context.TODO(), &s3.PutObjectInput{
 		Bucket: aws.String(os.Getenv("AWS_S3_BUCKET")),
-		Key:    aws.String(key),
+		Key:    aws.String(filename),
 	}, s3.WithPresignExpires(15*time.Minute))
 
 	if err != nil {
