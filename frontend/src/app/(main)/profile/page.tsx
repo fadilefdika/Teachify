@@ -75,15 +75,15 @@ export default function ProfilePage() {
               <div className="relative mx-auto">
                 <Avatar className="h-24 w-24 border-4 border-white shadow-lg">
                   <AvatarImage src="/placeholder.svg" alt="Admin User" />
-                  <AvatarFallback className="bg-gradient-to-br text-blue-500 text-2xl font-bold">{user.name?.charAt(0) || 'A'}</AvatarFallback>
+                  <AvatarFallback className="bg-gradient-to-br text-blue-500 text-2xl font-bold">{user.Username?.charAt(0) || 'A'}</AvatarFallback>
                 </Avatar>
                 <Button size="icon" variant="outline" className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full bg-white shadow-lg hover:bg-gray-50">
                   <Camera className="h-4 w-4" />
                 </Button>
               </div>
               <div className="space-y-2">
-                <CardTitle className="text-xl">{user.name}</CardTitle>
-                <CardDescription>System Administrator</CardDescription>
+                <CardTitle className="text-xl">{user.Username}</CardTitle>
+                <CardDescription>{user.Username}</CardDescription>
                 <Badge className="bg-violet-100 text-blue-800 dark:bg-violet-900/20 dark:text-blue-400">
                   <Shield className="mr-1 h-3 w-3" />
                   Admin
@@ -93,19 +93,26 @@ export default function ProfilePage() {
             <CardContent className="space-y-4">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Mail className="h-4 w-4" />
-                <span>{user.email}</span>
+                <span>{user.Email}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Phone className="h-4 w-4" />
-                <span>+1 (555) 123-4567</span>
+                <span>{user.CreatorProfile?.PhoneNumber}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <MapPin className="h-4 w-4" />
-                <span>San Francisco, CA</span>
+                <span>{user.CreatorProfile?.Address}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Calendar className="h-4 w-4" />
-                <span>Joined March 2023</span>
+                <span>
+                  Joined{' '}
+                  {new Date(user.CreatedAt).toLocaleDateString('id-ID', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                </span>
               </div>
             </CardContent>
           </Card>
@@ -138,7 +145,7 @@ export default function ProfilePage() {
 
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>
-                <Input id="email" type="email" defaultValue={user.email} />
+                <Input id="email" type="email" defaultValue={user.Email} />
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">

@@ -155,17 +155,29 @@ func Logout(c *gin.Context) {
 
 // Profile - Handler for fetching user profile
 func Profile(c *gin.Context) {
-	// Ambil user dari context (diset di middleware)
-	user, exists := c.Get("user")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found in context"})
-		return
-	}
+    // Misal userID diambil dari context yang sudah di-set di middleware
+    userIDInterface, exists := c.Get("userID")
+    if !exists {
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "User ID not found in context"})
+        return
+    }
+    userID, ok := userIDInterface.(uuid.UUID)
+    if !ok {
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID in context"})
+        return
+    }
 
-	c.JSON(http.StatusOK, gin.H{
-		"user": user.(models.User), // Pastikan type cast ke models.User
-	})
+    var user models.User
+    if err := database.DB.Preload("CreatorProfile").First(&user, "id = ?", userID).Error; err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{
+        "user": user,
+    })
 }
+
 
 func CompleteCreatorProfile(c *gin.Context) {
 	type CreatorProfileInput struct {

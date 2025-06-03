@@ -29,7 +29,7 @@ export default function LoginPage() {
     }
 
     try {
-      const res = await fetch('http://localhost:3000/api/login', {
+      const res = await fetch('/api/login', {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -39,20 +39,21 @@ export default function LoginPage() {
       });
 
       const data = await res.json();
-      console.log('Login response:', data);
+      console.log('Login response JSON:', data);
 
       if (res.ok) {
         localStorage.setItem('userId', data.user.id.toString());
-      } else {
-        setError(data.error || 'Login gagal');
-        setIsLoading(false);
-        return;
-      }
 
-      if (data.user.needsCompletion) {
+        // Redirect berdasarkan kebutuhan
+        // if (data.user.needsCompletion) {
+        //   router.push('/dashboard');
+        // } else {
+        //   router.push('/complete-profile');
+        // }
+
         router.push('/dashboard');
       } else {
-        router.push('/complete-profile');
+        setError(data.error || 'Login gagal');
       }
     } catch (error) {
       console.error('Login failed:', error);

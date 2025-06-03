@@ -18,7 +18,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     // Fetch API dengan cookie otomatis terkirim (credentials: 'include')
-    fetch('http://localhost:3000/api/dashboard', {
+    fetch('/api/dashboard', {
       credentials: 'include', // ini penting supaya cookie dikirim
       cache: 'no-store',
     })

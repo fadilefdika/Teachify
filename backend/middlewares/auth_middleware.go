@@ -56,24 +56,25 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Ambil userID dari claims
-		idFloat, ok := claims["id"].(float64)
+		// Ambil userID dari claims sebagai string
+		idStr, ok := claims["id"].(string)
 		if !ok {
 			fmt.Println("[Middleware] Token ID claim invalid or missing")
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token ID claim"})
 			c.Abort()
 			return
 		}
-		userID := uint(idFloat)
+		userID := idStr
 
 		// Ambil user dari database
 		var user models.User
-		if err := database.DB.First(&user, userID).Error; err != nil {
+		if err := database.DB.First(&user, "id = ?", userID).Error; err != nil {
 			fmt.Println("[Middleware] User not found with ID:", userID)
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
 			c.Abort()
 			return
 		}
+
 
 		// Log waktu expire dari token (kalau ada)
 		if exp, ok := claims["exp"].(float64); ok {
@@ -83,8 +84,7 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 			fmt.Println("[Middleware] Token expiration claim missing")
 		}
 
-		// Set user ke context agar bisa diakses handler selanjutnya
-		fmt.Println("Token expires at:", time.Now().Add(time.Hour * 24).Unix())
+		c.Set("userID", user.ID)
 		c.Set("user", user)
 		c.Next()
 	}

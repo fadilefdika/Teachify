@@ -13,7 +13,7 @@ import { ScrollArea } from '@radix-ui/react-scroll-area';
 // Dummy uploader, ganti dengan endpoint asli kamu
 async function uploadToS3(file: File, folder: string): Promise<string> {
   const fileName = `${folder}${Date.now()}_${file.name}`;
-  const res = await fetch(`http://localhost:3000/api/presigned-url?filename=${encodeURIComponent(fileName)}`);
+  const res = await fetch(`/api/presigned-url?filename=${encodeURIComponent(fileName)}`);
 
   if (!res.ok) throw new Error('Failed to get presigned URL');
 
@@ -44,13 +44,21 @@ export default function CreatorRegistrationForm() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  const [userId, setUserId] = useState<string>(''); // contoh
+  const [userId, setUserId] = useState<string>('');
+  const [bankAccount, setBankAccount] = useState('');
+  const [portfolioUrl, setPortfolioUrl] = useState('');
+  const [socialMedia, setSocialMedia] = useState('');
+  const [biography, setBiography] = useState('');
 
-  // Misal ambil userId dari localStorage saat component mount
   useEffect(() => {
     const storedUserId = localStorage.getItem('userId');
+    console.log('[DEBUG] Component mounted');
+    console.log('[DEBUG] LocalStorage userId:', storedUserId);
+
     if (storedUserId) {
       setUserId(storedUserId);
+    } else {
+      console.warn('[DEBUG] No userId found in localStorage');
     }
   }, []);
 
@@ -59,42 +67,69 @@ export default function CreatorRegistrationForm() {
     setIsLoading(true);
     setError(null);
 
-    if (!ktpFile || !cvFile || !selfieFile || !phoneNumber || !address) {
+    console.log('[DEBUG] Form submission started');
+    console.log('[DEBUG] phoneNumber:', phoneNumber);
+    console.log('[DEBUG] address:', address);
+    console.log('[DEBUG] userId:', userId);
+    console.log('[DEBUG] Files => KTP:', ktpFile, '| CV:', cvFile, '| Selfie:', selfieFile);
+
+    if (!ktpFile || !cvFile || !selfieFile || !phoneNumber || !address || !biography) {
+      console.error('[DEBUG] Incomplete form submission');
       setError('Please complete all required fields');
       setIsLoading(false);
       return;
     }
 
     try {
+      console.log('[DEBUG] Uploading files to S3...');
+
       const ktpUrl = await uploadToS3(ktpFile, 'creator-ktp/');
       const cvUrl = await uploadToS3(cvFile, 'creator-cv/');
       const selfieUrl = await uploadToS3(selfieFile, 'creator-selfie/');
+
+      console.log('[DEBUG] S3 Uploads Complete => KTP:', ktpUrl, '| CV:', cvUrl, '| Selfie:', selfieUrl);
 
       const payload = {
         userId,
         phoneNumber,
         address,
+        bankAccount,
         ktpUrl,
         cvUrl,
-        selfieUrl, // ditambahkan
+        selfieUrl,
+        portfolioUrl,
+        socialMedia,
+        biography,
       };
 
-      console.log('Payload JSON:', JSON.stringify(payload));
+      console.log('[DEBUG] Final Payload:', payload);
 
-      const res = await fetch('http://localhost:3000/api/complete-profile', {
+      const res = await fetch('/api/complete-profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
+        credentials: 'include',
       });
 
-      if (!res.ok) {
+      console.log('[DEBUG] Fetch Response => Status:', res.status);
+      console.log('[DEBUG] Response Headers:', [...res.headers.entries()]);
+      const contentType = res.headers.get('content-type');
+      if (contentType?.includes('application/json')) {
         const data = await res.json();
-        setError(data.error || 'Submission failed.');
+        console.log('[DEBUG] Response JSON:', data);
+      } else {
+        console.log('[DEBUG] Response non-JSON');
+      }
+
+      if (!res.ok) {
+        setError('Failed to submit registration. Please check your data.');
         return;
       }
 
+      console.log('[DEBUG] Redirecting to /dashboard...');
       router.push('/dashboard');
     } catch (err) {
+      console.error('[DEBUG] Submission Error:', err);
       setError('Something went wrong. Please try again.');
     } finally {
       setIsLoading(false);
@@ -116,7 +151,7 @@ export default function CreatorRegistrationForm() {
 
         <div className="space-y-2">
           <Label htmlFor="bankAccount">Bank Account (optional)</Label>
-          <Input id="bankAccount" name="bankAccount" />
+          <Input id="bankAccount" name="bankAccount" value={bankAccount} onChange={(e) => setBankAccount(e.target.value)} />
         </div>
 
         <div className="space-y-2 md:col-span-2">
@@ -141,17 +176,17 @@ export default function CreatorRegistrationForm() {
 
         <div className="space-y-2">
           <Label htmlFor="portfolio">Portfolio URL (optional)</Label>
-          <Input id="portfolio" name="portfolio" type="url" />
+          <Input id="portfolio" name="portfolio" type="url" value={portfolioUrl} onChange={(e) => setPortfolioUrl(e.target.value)} />
         </div>
 
         <div className="space-y-2 md:col-span-2">
           <Label htmlFor="socialMedia">Social Media</Label>
-          <Input id="socialMedia" name="socialMedia" type="url" />
+          <Input id="socialMedia" name="socialMedia" type="url" value={socialMedia} onChange={(e) => setSocialMedia(e.target.value)} />
         </div>
 
         <div className="space-y-2 md:col-span-2">
           <Label htmlFor="biography">Short Biography</Label>
-          <Textarea id="biography" name="biography" rows={4} required />
+          <Textarea id="biography" name="biography" rows={4} required value={biography} onChange={(e) => setBiography(e.target.value)} />
         </div>
       </div>
 

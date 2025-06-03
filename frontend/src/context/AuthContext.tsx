@@ -2,10 +2,24 @@
 
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 
-type User = {
+export type User = {
   id: string;
-  name: string;
-  email: string;
+  Username: string;
+  Email: string;
+  CreatedAt: string;
+  CreatorProfile: {
+    BankAccount: string;
+    PhoneNumber: string;
+    Address: string;
+    KTPUrl: string;
+    CVUrl: string;
+    SelfieUrl: string;
+    PortfolioUrl: string;
+    SocialMedia: string;
+    Biography: string;
+    UserID: string;
+    Status: string;
+  } | null;
 };
 
 type AuthContextType = {
@@ -26,7 +40,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = useCallback(async () => {
     try {
-      await fetch('http://localhost:3000/api/logout', {
+      await fetch('/api/logout', {
         method: 'POST',
         credentials: 'include',
       });
@@ -41,21 +55,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const fetchUser = useCallback(
     async (signal: AbortSignal) => {
       try {
-        const res = await fetch('http://localhost:3000/api/profile', {
+        const res = await fetch('/api/profile', {
           method: 'GET',
-          credentials: 'include',
+          credentials: 'include', // penting jika pakai cookie
           signal,
         });
 
-        if (!res.ok) throw new Error('Unauthorized');
+        const text = await res.text();
 
-        const data = await res.json();
+        if (!res.ok) throw new Error(`Unauthorized - Status ${res.status}`);
+
+        const data = JSON.parse(text);
         setUser(data.user);
         console.log('[AuthContext] User data:', data.user);
       } catch (error: any) {
         if (error.name !== 'AbortError') {
           console.error('[AuthContext] Failed to fetch user:', error.message);
-          logout();
         }
       } finally {
         setIsLoading(false);

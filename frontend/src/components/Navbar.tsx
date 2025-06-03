@@ -29,7 +29,7 @@ export default function Navbar({ toggleSidebar }: NavbarProps) {
 
   async function handleLogout() {
     try {
-      const res = await fetch('http://localhost:3000/api/logout', {
+      const res = await fetch('/api/logout', {
         method: 'POST',
         credentials: 'include', // penting kalau cookie httpOnly di backend
       });
