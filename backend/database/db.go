@@ -63,7 +63,6 @@ func AutoMigrateAll() {
 		&models.User{},
 		&models.Course{},
 		&models.Lesson{},
-		&models.Module{},
 		&models.Option{},
 		&models.Question{},
 		&models.Quiz{},

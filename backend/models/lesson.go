@@ -3,29 +3,33 @@ package models
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 // Lesson represents a lesson inside a module
 type Lesson struct {
-	ID          uint           `json:"id" gorm:"primaryKey"`
-	CreatedAt   time.Time      `json:"created_at"`
-	UpdatedAt   time.Time      `json:"updated_at"`
-	DeletedAt   gorm.DeletedAt `json:"deleted_at" gorm:"index" swaggerignore:"true"`
+    ID          uint           `json:"id" gorm:"primaryKey"`
+    CreatedAt   time.Time      `json:"created_at"`
+    UpdatedAt   time.Time      `json:"updated_at"`
+    DeletedAt   gorm.DeletedAt `json:"deleted_at" gorm:"index" swaggerignore:"true"`
 
-	Title       string         `json:"title" binding:"required"`    // Lesson title
-	VideoURL    string         `json:"video_url"`                   // Link to the video
-	Duration    string         `json:"duration"`                    // e.g. "5m30s"
-	Thumbnail   string         `json:"thumbnail"`                   // Image preview
-	Description string         `json:"description"`                 // Summary or detail
-	Content     string         `json:"content"`                     // Rich HTML or markdown
+    CourseID    uuid.UUID      `json:"course_id"`                   // Foreign key ke Course
 
-	Attachments []Attachment   `json:"attachments" gorm:"foreignKey:LessonID"` // File list (moved to separate table if needed)
-	IsPreview   bool           `json:"is_preview"`                  // Whether it's accessible without enrolling
-	Order       uint           `json:"order"`                       // Lesson order in the module
+    Title       string         `json:"title" binding:"required"`   // Judul lesson
+    VideoURL    string         `json:"video_url,omitempty"`        // Link video (bisa kosong)
+    Duration    int            `json:"duration,omitempty"`         // Durasi dalam detik atau menit
+    Thumbnail   string         `json:"thumbnail,omitempty"`        // Gambar preview (optional)
+    Description string         `json:"description,omitempty"`      // Ringkasan materi
+    Content     string         `json:"content,omitempty"`          // Isi materi (HTML / markdown)
 
-	QuizID      *uint          `json:"quiz_id"`                     // Optional quiz
-	Quiz        *Quiz          `json:"quiz" gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+    Attachments []Attachment   `json:"attachments" gorm:"foreignKey:LessonID"` // File attachment, kalau ada
 
-	ModuleID    uint           `json:"module_id"`                   // Foreign key to module
+    IsPreview   bool           `json:"is_preview"`                 // Bisa diakses tanpa daftar course
+
+    Order       uint           `json:"order"`                      // Urutan lesson dalam course
+
+    QuizID      *uint          `json:"quiz_id,omitempty"`          // Optional quiz ID
+    Quiz        *Quiz          `json:"quiz" gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 }
+

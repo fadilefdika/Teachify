@@ -4,7 +4,7 @@
 
 import { useAuth } from '@/context/AuthContext'; // pastikan path sesuai
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Separator } from '@/components/ui/separator';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
@@ -16,117 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { Search, Plus, Filter, BookOpen, Users, Clock, Star, Play, Edit, Trash2, MoreHorizontal, TrendingUp } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-
-const courses = [
-  {
-    id: '1',
-    title: 'React Fundamentals',
-    description: 'Learn the basics of React including components, props, state, and hooks',
-    instructor: 'Sarah Johnson',
-    instructorAvatar: '/placeholder.svg?height=40&width=40',
-    students: 245,
-    duration: '8 weeks',
-    progress: 78,
-    rating: 4.8,
-    status: 'Active',
-    category: 'Frontend',
-    price: '$99',
-    thumbnail: '/placeholder.svg?height=200&width=300',
-    lessons: 24,
-    level: 'Beginner',
-    lastUpdated: '2 days ago',
-  },
-  {
-    id: '2',
-    title: 'Node.js Backend Development',
-    description: 'Master server-side development with Node.js, Express, and MongoDB',
-    instructor: 'Michael Chen',
-    instructorAvatar: '/placeholder.svg?height=40&width=40',
-    students: 189,
-    duration: '10 weeks',
-    progress: 65,
-    rating: 4.6,
-    status: 'Active',
-    category: 'Backend',
-    price: '$129',
-    thumbnail: '/placeholder.svg?height=200&width=300',
-    lessons: 32,
-    level: 'Intermediate',
-    lastUpdated: '1 week ago',
-  },
-  {
-    id: '3',
-    title: 'UI/UX Design Principles',
-    description: 'Create beautiful and user-friendly interfaces with modern design principles',
-    instructor: 'Emily Davis',
-    instructorAvatar: '/placeholder.svg?height=40&width=40',
-    students: 156,
-    duration: '6 weeks',
-    progress: 82,
-    rating: 4.9,
-    status: 'Active',
-    category: 'Design',
-    price: '$89',
-    thumbnail: '/placeholder.svg?height=200&width=300',
-    lessons: 18,
-    level: 'Beginner',
-    lastUpdated: '3 days ago',
-  },
-  {
-    id: '4',
-    title: 'Python Programming',
-    description: 'Complete Python course from basics to advanced topics including data structures',
-    instructor: 'David Wilson',
-    instructorAvatar: '/placeholder.svg?height=40&width=40',
-    students: 298,
-    duration: '12 weeks',
-    progress: 71,
-    rating: 4.7,
-    status: 'Active',
-    category: 'Programming',
-    price: '$149',
-    thumbnail: '/placeholder.svg?height=200&width=300',
-    lessons: 45,
-    level: 'Beginner',
-    lastUpdated: '5 days ago',
-  },
-  {
-    id: '5',
-    title: 'Data Science Fundamentals',
-    description: 'Introduction to data science with Python, pandas, and machine learning',
-    instructor: 'Lisa Anderson',
-    instructorAvatar: '/placeholder.svg?height=40&width=40',
-    students: 134,
-    duration: '16 weeks',
-    progress: 59,
-    rating: 4.5,
-    status: 'Draft',
-    category: 'Analytics',
-    price: '$199',
-    thumbnail: '/placeholder.svg?height=200&width=300',
-    lessons: 52,
-    level: 'Advanced',
-    lastUpdated: '1 day ago',
-  },
-  {
-    id: '6',
-    title: 'Mobile App Development',
-    description: 'Build cross-platform mobile apps with React Native and Expo',
-    instructor: 'Alex Rodriguez',
-    instructorAvatar: '/placeholder.svg?height=40&width=40',
-    students: 87,
-    duration: '14 weeks',
-    progress: 43,
-    rating: 4.4,
-    status: 'Active',
-    category: 'Mobile',
-    price: '$179',
-    thumbnail: '/placeholder.svg?height=200&width=300',
-    lessons: 38,
-    level: 'Intermediate',
-    lastUpdated: '1 week ago',
-  },
-];
+import AddCourseModal from './components/AddCourseModal';
 
 const stats = [
   {
@@ -163,9 +53,10 @@ const stats = [
   },
 ];
 
-export default function ProfilePage() {
+export default function CoursesPage() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -173,13 +64,12 @@ export default function ProfilePage() {
     }
   }, [isLoading, user, router]);
 
+  function handleAddSuccess() {
+    // logika setelah tambah course berhasil, misal refresh data
+    setIsModalOpen(false);
+  }
+
   if (isLoading || !user) return <div>Loading...</div>;
-
-  return <CoursesPage />;
-}
-
-function CoursesPage() {
-  const router = useRouter();
 
   return (
     <SidebarInset>
@@ -211,10 +101,11 @@ function CoursesPage() {
               <Filter className="mr-2 h-4 w-4" />
               Filter
             </Button>
-            <Button className="rounded-xl bg-gradient-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 shadow-lg">
+            <Button className="rounded-xl bg-gradient-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 shadow-lg" onClick={() => setIsModalOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
               Add Course
             </Button>
+            <AddCourseModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSuccess={handleAddSuccess} />
           </div>
         </div>
       </header>
@@ -225,7 +116,6 @@ function CoursesPage() {
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-sky-600 bg-clip-text text-transparent">Course Management</h1>
           <p className="text-lg text-muted-foreground">Manage and monitor all courses in your learning platform</p>
         </div>
-
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {stats.map((stat, index) => (
@@ -244,8 +134,7 @@ function CoursesPage() {
             </Card>
           ))}
         </div>
-
-        {/* Courses Grid */}
+        {/* Courses Grid
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {courses.map((course) => (
             <Card key={course.id} className="group overflow-hidden border-0 bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl hover:bg-white/80 dark:hover:bg-gray-900/80 transition-all duration-300 hover:scale-105 hover:shadow-xl">
@@ -350,7 +239,7 @@ function CoursesPage() {
               </CardContent>
             </Card>
           ))}
-        </div>
+        </div> */}
       </div>
     </SidebarInset>
   );

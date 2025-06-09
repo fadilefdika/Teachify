@@ -70,10 +70,7 @@ func main() {
 		if err != nil {
 			log.Printf("Failed to list objects in bucket %s: %v", bucket, err)
 		} else {
-			log.Println("First page of S3 bucket objects:")
-			for _, obj := range output.Contents {
-				log.Printf("key=%s size=%d", aws.ToString(obj.Key), obj.Size)
-			}
+			log.Printf("Objects in bucket %s: %v", bucket, output.Contents)
 		}
 	}
 

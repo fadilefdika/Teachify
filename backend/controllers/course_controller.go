@@ -13,8 +13,10 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // GetAllCourses godoc
@@ -77,10 +79,10 @@ func GetCourseByID(c *gin.Context) {
 
 	var course models.Course
 
-	// Preload Modules -> Lessons dan juga relasi User sebagai Instructor
+	// Preload Modules -> Lessons dan juga relasi User sebagai creator
 	if err := database.DB.
 		Preload("Modules.Lessons").
-		Preload("Instructor").
+		Preload("creator").
 		First(&course, uint(id)).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Course not found"})
 		return
@@ -105,78 +107,81 @@ func GetCourseByID(c *gin.Context) {
 // @Router /api/courses [post]
 // @Security BearerAuth
 func CreateCourse(c *gin.Context) {
-	// Ambil data user dari context (diasumsikan sudah diset oleh middleware auth)
+	// Ambil user dari context (diasumsikan sudah ada di middleware)
 	user, exists := c.Get("user")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
-	// Konversi interface{} ke struct User
 	currentUser, ok := user.(models.User)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse user"})
 		return
 	}
 
-	// Cek apakah role user adalah instructor
-	if currentUser.Role != "instructor" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Only instructors can create courses"})
+	// Cek role creator
+	if currentUser.Role != "creator" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Only creators can create courses"})
 		return
 	}
 
+	// Input struct yang sesuai model
 	var input struct {
 		Title       string  `json:"title" binding:"required"`
 		Description string  `json:"description"`
 		ImageURL    string  `json:"image_url"`
-		Level       string  `json:"level"`
-		Duration    string  `json:"duration"`
-		Price       string  `json:"price"`
-		Status      string  `json:"status"`
+		Level       string  `json:"level"`       // Optional: bisa tambah validasi level
+		Duration    int     `json:"duration"`    // durasi dalam menit (int)
+		Price       float64 `json:"price"`       // harga kursus
+		Status      string  `json:"status"`      // misal: "draft" atau "published"
 		Category    string  `json:"category"`
-		Lessons     int     `json:"lessons"`
-		Progress    int     `json:"progress"`
-		Rating      float64 `json:"rating"`
-		Students    int     `json:"students"`
-		LastUpdated string  `json:"last_updated"` // Bisa diganti time.Time jika perlu validasi waktu
 	}
 
-	// Bind JSON ke input struct
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Buat struct course untuk disimpan
-	course := models.Course{
-		Title:        input.Title,
-		Description:  input.Description,
-		ImageURL:     input.ImageURL,
-		Level:        input.Level,
-		Duration:     input.Duration,
-		Price:        input.Price,
-		Status:       input.Status,
-		Category:     input.Category,
-		Lessons:      input.Lessons,
-		Progress:     input.Progress,
-		Rating:       input.Rating,
-		Students:     input.Students,
-		LastUpdated:  input.LastUpdated, // Jika perlu parse time, bisa gunakan time.Parse
-		CreatorId: currentUser.ID,
+	// Bisa tambahkan validasi level dan status di sini jika perlu
+	allowedLevels := map[string]bool{"Beginner": true, "Intermediate": true, "Advanced": true}
+	if input.Level != "" && !allowedLevels[input.Level] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid level value"})
+		return
 	}
 
-	// Simpan course ke database
+	allowedStatus := map[string]bool{"draft": true, "published": true}
+	if input.Status != "" && !allowedStatus[input.Status] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid status value"})
+		return
+	}
+
+	// Buat struct course baru
+	course := models.Course{
+		Title:       input.Title,
+		Description: input.Description,
+		ImageURL:    input.ImageURL,
+		Level:       input.Level,
+		Duration:    input.Duration,
+		Price:       input.Price,
+		Status:      input.Status,
+		Category:    input.Category,
+		CreatorId:   currentUser.ID,
+		LastUpdated: time.Now(),
+	}
+
+	// Simpan ke database
 	if err := database.DB.Create(&course).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Response sukses
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "Course created successfully",
 		"course":  course,
 	})
 }
+
 
 
 
@@ -195,100 +200,125 @@ func CreateCourse(c *gin.Context) {
 // @Router /api/courses/{id} [put]
 // @Security BearerAuth
 func UpdateCourse(c *gin.Context) {
-	// Ambil ID dari parameter URL
-	idParam := c.Param("id")
-	id, err := strconv.ParseUint(idParam, 10, 32)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid course ID"})
-		return
-	}
+    // Parse UUID dari param
+    idParam := c.Param("id")
+    courseID, err := uuid.Parse(idParam)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid course ID"})
+        return
+    }
 
-	// Ambil user dari context
-	user, exists := c.Get("user")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
+    // Ambil user dari context (middleware auth)
+    user, exists := c.Get("user")
+    if !exists {
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+        return
+    }
+    currentUser, ok := user.(models.User)
+    if !ok {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse user"})
+        return
+    }
 
-	currentUser, ok := user.(models.User)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse user"})
-		return
-	}
+    if currentUser.Role != "creator" {
+        c.JSON(http.StatusForbidden, gin.H{"error": "Only creators can update courses"})
+        return
+    }
 
-	if currentUser.Role != "instructor" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Only instructors can update courses"})
-		return
-	}
+    // Ambil course dari DB
+    var course models.Course
+    if err := database.DB.First(&course, "id = ?", courseID).Error; err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": "Course not found"})
+        return
+    }
 
-	// Struct input update
-	type UpdateCourseInput struct {
-		Title       string  `json:"title"`
-		Description string  `json:"description"`
-		ImageURL    string  `json:"image_url"`
-		Level       string  `json:"level"`
-		Duration    string  `json:"duration"`
-		Price       string  `json:"price"`
-		Status      string  `json:"status"`
-		Category    string  `json:"category"`
-		Lessons     int     `json:"lessons"`
-		Progress    int     `json:"progress"`
-		Rating      float64 `json:"rating"`
-		Students    int     `json:"students"`
-		LastUpdated string  `json:"last_updated"`
-	}
+    // Validasi kepemilikan course
+    if course.CreatorId != currentUser.ID {
+        c.JSON(http.StatusForbidden, gin.H{"error": "You are not authorized to update this course"})
+        return
+    }
 
-	var input UpdateCourseInput
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+    // Struct input dengan pointer supaya bisa partial update
+    type UpdateCourseInput struct {
+        Title       *string  `json:"title"`
+        Description *string  `json:"description"`
+        ImageURL    *string  `json:"image_url"`
+        Level       *string  `json:"level"`
+        Duration    *string  `json:"duration"`
+        Price       *string  `json:"price"`
+        Status      *string  `json:"status"`
+        Category    *string  `json:"category"`
+        Lessons     *int     `json:"lessons"`
+        Progress    *int     `json:"progress"`
+        Rating      *float64 `json:"rating"`
+        Students    *int     `json:"students"`
+        // LastUpdated tidak perlu input, akan set otomatis
+    }
 
-	// Ambil course dari DB
-	var course models.Course
-	if err := database.DB.First(&course, uint(id)).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Course not found"})
-		return
-	}
+    var input UpdateCourseInput
+    if err := c.ShouldBindJSON(&input); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
 
-	// Validasi kepemilikan course
-	if course.CreatorId != currentUser.ID {
-		c.JSON(http.StatusForbidden, gin.H{"error": "You are not authorized to update this course"})
-		return
-	}
+    // Map input ke map[string]interface{} untuk update partial
+    updates := make(map[string]interface{})
+    if input.Title != nil {
+        updates["title"] = *input.Title
+    }
+    if input.Description != nil {
+        updates["description"] = *input.Description
+    }
+    if input.ImageURL != nil {
+        updates["image_url"] = *input.ImageURL
+    }
+    if input.Level != nil {
+        updates["level"] = *input.Level
+    }
+    if input.Duration != nil {
+        updates["duration"] = *input.Duration
+    }
+    if input.Price != nil {
+        updates["price"] = *input.Price
+    }
+    if input.Status != nil {
+        updates["status"] = *input.Status
+    }
+    if input.Category != nil {
+        updates["category"] = *input.Category
+    }
+    if input.Lessons != nil {
+        updates["lessons"] = *input.Lessons
+    }
+    if input.Progress != nil {
+        updates["progress"] = *input.Progress
+    }
+    if input.Rating != nil {
+        updates["rating"] = *input.Rating
+    }
+    if input.Students != nil {
+        updates["students"] = *input.Students
+    }
 
-	// Update semua field
-	course.Title = input.Title
-	course.Description = input.Description
-	course.ImageURL = input.ImageURL
-	course.Level = input.Level
-	course.Duration = input.Duration
-	course.Price = input.Price
-	course.Status = input.Status
-	course.Category = input.Category
-	course.Lessons = input.Lessons
-	course.Progress = input.Progress
-	course.Rating = input.Rating
-	course.Students = input.Students
-	course.LastUpdated = input.LastUpdated
+    updates["last_updated"] = time.Now() // otomatis update timestamp
 
-	// Simpan ke DB
-	if err := database.DB.Save(&course).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
+    if err := database.DB.Model(&course).Updates(updates).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
 
-	// Preload relasi instructor jika perlu
-	if err := database.DB.Preload("Instructor").First(&course, course.ID).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch updated course with instructor"})
-		return
-	}
+    // Ambil ulang course beserta relasi creator
+    if err := database.DB.Preload("Creator").First(&course, "id = ?", courseID).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch updated course"})
+        return
+    }
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Course updated successfully",
-		"course":  course,
-	})
+    c.JSON(http.StatusOK, gin.H{
+        "message": "Course updated successfully",
+        "course":  course,
+    })
 }
+
 
 
 

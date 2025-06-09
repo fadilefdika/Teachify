@@ -37,16 +37,9 @@ func SetupRoutes(r *gin.Engine) {
             authorized.PUT("/courses/:id", controllers.UpdateCourse)
             authorized.DELETE("/courses/:id", controllers.DeleteCourse)
 
-            // Modules
-            authorized.GET("/courses/:id/modules", controllers.GetModulesByCourse)
-            authorized.POST("/courses/:id/modules", controllers.CreateModule)
-            authorized.GET("/modules/:id", controllers.GetModuleByID)
-            authorized.PUT("/modules/:id", controllers.UpdateModule)
-            authorized.DELETE("/modules/:id", controllers.DeleteModule)
 
             // Lessons
-            authorized.GET("/modules/:id/lessons", controllers.GetLessonsByModule)
-            authorized.POST("/modules/:id/lessons", controllers.CreateLessonForModule)
+            authorized.POST("/modules/:id/lessons", controllers.CreateLessonForCourse)
             authorized.GET("/lessons/:id", controllers.GetLessonByID)
             authorized.PUT("/lessons/:id", controllers.UpdateLesson)
             authorized.DELETE("/lessons/:id", controllers.DeleteLesson)

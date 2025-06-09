@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // CreateLessonForModule godoc
@@ -22,41 +23,62 @@ import (
 // @Failure 500 {object} map[string]string
 // @Router /api/modules/{id}/lessons [post]
 // @Security BearerAuth
-func CreateLessonForModule(c *gin.Context) {
-	moduleIDStr := c.Param("id")
+func CreateLessonForCourse(c *gin.Context) {
+    courseIDStr := c.Param("course_id")
 
-	// Convert moduleID to uint
-	moduleID, err := strconv.ParseUint(moduleIDStr, 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid module ID"})
-		return
-	}
+    // Convert courseID string ke UUID
+    courseID, err := uuid.Parse(courseIDStr)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid course ID"})
+        return
+    }
 
-	// Check if module exists
-	var module models.Module
-	if err := database.DB.First(&module, moduleID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Module not found"})
-		return
-	}
+    // Cek apakah course ada
+    var course models.Course
+    if err := database.DB.First(&course, "id = ?", courseID).Error; err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": "Course not found"})
+        return
+    }
 
-	// Bind JSON input for lesson
-	var lesson models.Lesson
-	if err := c.ShouldBindJSON(&lesson); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+    // Bind input lesson (bisa pakai struct terpisah kalau mau validasi khusus)
+    var input struct {
+        Title       string  `json:"title" binding:"required"`
+        VideoURL    string  `json:"video_url,omitempty"`
+        Duration    int     `json:"duration,omitempty"`  // durasi dalam menit/detik
+        Thumbnail   string  `json:"thumbnail,omitempty"`
+        Description string  `json:"description,omitempty"`
+        Content     string  `json:"content,omitempty"`
+        IsPreview   bool    `json:"is_preview"`
+        Order       uint    `json:"order" binding:"required"`
+        QuizID      *uint   `json:"quiz_id,omitempty"`
+    }
 
-	// Set the ModuleID for the lesson
-	lesson.ModuleID = uint(moduleID)
+    if err := c.ShouldBindJSON(&input); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
 
-	// Create the lesson
-	if err := database.DB.Create(&lesson).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create lesson"})
-		return
-	}
+    lesson := models.Lesson{
+        CourseID:    courseID,
+        Title:       input.Title,
+        VideoURL:    input.VideoURL,
+        Duration:    input.Duration,
+        Thumbnail:   input.Thumbnail,
+        Description: input.Description,
+        Content:     input.Content,
+        IsPreview:   input.IsPreview,
+        Order:       input.Order,
+        QuizID:      input.QuizID,
+    }
 
-	c.JSON(http.StatusCreated, lesson)
+    if err := database.DB.Create(&lesson).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create lesson"})
+        return
+    }
+
+    c.JSON(http.StatusCreated, lesson)
 }
+
 
 
 // GetLessonsByModule godoc
@@ -70,32 +92,32 @@ func CreateLessonForModule(c *gin.Context) {
 // @Failure      500    {object}  map[string]string
 // @Router       /api/modules/{id}/lessons [get]
 // @Security     BearerAuth
-func GetLessonsByModule(c *gin.Context) {
-	moduleIDStr := c.Param("id")
+// func GetLessonsByModule(c *gin.Context) {
+// 	moduleIDStr := c.Param("id")
 
-	// Convert moduleID to uint
-	moduleID, err := strconv.ParseUint(moduleIDStr, 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid module ID"})
-		return
-	}
+// 	// Convert moduleID to uint
+// 	moduleID, err := strconv.ParseUint(moduleIDStr, 10, 64)
+// 	if err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid module ID"})
+// 		return
+// 	}
 
-	// Check if module exists
-	var module models.Module
-	if err := database.DB.First(&module, moduleID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Module not found"})
-		return
-	}
+// 	// Check if module exists
+// 	var module models.Module
+// 	if err := database.DB.First(&module, moduleID).Error; err != nil {
+// 		c.JSON(http.StatusNotFound, gin.H{"error": "Module not found"})
+// 		return
+// 	}
 
-	// Find lessons by module ID
-	var lessons []models.Lesson
-	if err := database.DB.Where("module_id = ?", moduleID).Find(&lessons).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch lessons"})
-		return
-	}
+// 	// Find lessons by module ID
+// 	var lessons []models.Lesson
+// 	if err := database.DB.Where("module_id = ?", moduleID).Find(&lessons).Error; err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch lessons"})
+// 		return
+// 	}
 
-	c.JSON(http.StatusOK, lessons)
-}
+// 	c.JSON(http.StatusOK, lessons)
+// }
 
 
 // GetLessonByID godoc

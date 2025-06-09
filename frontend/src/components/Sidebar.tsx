@@ -25,7 +25,7 @@ const navigationItems = [
   },
   {
     title: 'Courses',
-    url: '/course',
+    url: '/courses',
     icon: BookOpen,
     color: 'text-blue-600',
   },
@@ -199,8 +199,8 @@ export function AppSidebar() {
                       <AvatarFallback className="rounded-xl bg-gradient-to-br text-blue-500 font-bold">AD</AvatarFallback>
                     </Avatar>
                     <div className="grid flex-1 text-left text-sm leading-tight">
-                      <span className="truncate font-semibold">{user?.email}</span>
-                      <span className="truncate text-xs text-muted-foreground">{user?.email}</span>
+                      <span className="truncate font-semibold">{user?.Email}</span>
+                      <span className="truncate text-xs text-muted-foreground">{user?.Email}</span>
                     </div>
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
