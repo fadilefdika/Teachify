@@ -16,7 +16,7 @@ type Course struct {
 
     Title       string         `json:"title" binding:"required"`
     Description string         `json:"description,omitempty"`
-    ImageURL    string         `json:"image_url,omitempty"`
+    Thumbnail    string         `json:"thumbnail,omitempty"`
     Level       string         `json:"level,omitempty"`      // Bisa "Beginner", "Intermediate", "Advanced"
     Duration    int            `json:"duration,omitempty"`   // Total durasi dalam menit, misal 120 (integer lebih cocok daripada string)
     Price       float64        `json:"price,omitempty"`      // Harga dalam angka, misal 150000.00

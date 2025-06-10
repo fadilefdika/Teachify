@@ -10,6 +10,7 @@ package controllers
 import (
 	"backend/database"
 	"backend/models"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -107,6 +108,24 @@ func GetCourseByID(c *gin.Context) {
 // @Router /api/courses [post]
 // @Security BearerAuth
 func CreateCourse(c *gin.Context) {
+	// Input struct yang sesuai model
+	var input struct {
+		Title       string  `json:"title" binding:"required"`
+		Description string  `json:"description"`
+		Thumbnail   string  `json:"thumbnail"`
+		Level       string  `json:"level"`
+		Price       float64 `json:"price"`
+		Status      string  `json:"status"`
+		Category    string  `json:"category"`
+	}
+
+	// Binding JSON duluan
+	if err := c.ShouldBindJSON(&input); err != nil {
+		fmt.Println("JSON Binding Error:", err) // ✅ DEBUG
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
 	// Ambil user dari context (diasumsikan sudah ada di middleware)
 	user, exists := c.Get("user")
 	if !exists {
@@ -126,30 +145,14 @@ func CreateCourse(c *gin.Context) {
 		return
 	}
 
-	// Input struct yang sesuai model
-	var input struct {
-		Title       string  `json:"title" binding:"required"`
-		Description string  `json:"description"`
-		ImageURL    string  `json:"image_url"`
-		Level       string  `json:"level"`       // Optional: bisa tambah validasi level
-		Duration    int     `json:"duration"`    // durasi dalam menit (int)
-		Price       float64 `json:"price"`       // harga kursus
-		Status      string  `json:"status"`      // misal: "draft" atau "published"
-		Category    string  `json:"category"`
-	}
-
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Bisa tambahkan validasi level dan status di sini jika perlu
+	// Validasi level
 	allowedLevels := map[string]bool{"Beginner": true, "Intermediate": true, "Advanced": true}
 	if input.Level != "" && !allowedLevels[input.Level] {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid level value"})
 		return
 	}
 
+	// Validasi status
 	allowedStatus := map[string]bool{"draft": true, "published": true}
 	if input.Status != "" && !allowedStatus[input.Status] {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid status value"})
@@ -160,9 +163,8 @@ func CreateCourse(c *gin.Context) {
 	course := models.Course{
 		Title:       input.Title,
 		Description: input.Description,
-		ImageURL:    input.ImageURL,
+		Thumbnail:   input.Thumbnail,
 		Level:       input.Level,
-		Duration:    input.Duration,
 		Price:       input.Price,
 		Status:      input.Status,
 		Category:    input.Category,

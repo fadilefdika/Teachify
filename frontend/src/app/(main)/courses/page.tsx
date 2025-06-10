@@ -1,8 +1,6 @@
-// app/profile/page.tsx
-
 'use client';
 
-import { useAuth } from '@/context/AuthContext'; // pastikan path sesuai
+import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
@@ -53,10 +51,37 @@ const stats = [
   },
 ];
 
+// ✅ Tambahkan data dummy
+const dummyCourses = [
+  {
+    id: '1',
+    title: 'Introduction to Web Development',
+    description: 'Learn HTML, CSS, and JavaScript to build modern websites.',
+    category: 'Development',
+    level: 'Beginner',
+    rating: 4.7,
+    students: 325,
+    status: 'Active',
+    thumbnail: '',
+  },
+  {
+    id: '2',
+    title: 'Advanced React Techniques',
+    description: 'Dive into React hooks, context API, and performance optimization.',
+    category: 'Development',
+    level: 'Advanced',
+    rating: 4.9,
+    students: 180,
+    status: 'Inactive',
+    thumbnail: '',
+  },
+];
+
 export default function CoursesPage() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [courses, setCourses] = useState(dummyCourses); // gunakan dummy
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -65,7 +90,6 @@ export default function CoursesPage() {
   }, [isLoading, user, router]);
 
   function handleAddSuccess() {
-    // logika setelah tambah course berhasil, misal refresh data
     setIsModalOpen(false);
   }
 
@@ -81,13 +105,11 @@ export default function CoursesPage() {
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem className="hidden md:block">
-                <BreadcrumbLink href="#" className="text-blue-600 hover:text-blue-700">
-                  Admin Dashboard
-                </BreadcrumbLink>
+                <BreadcrumbLink href="#">Admin Dashboard</BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem>
-                <BreadcrumbPage className="font-semibold">Courses</BreadcrumbPage>
+                <BreadcrumbPage>Courses</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -116,130 +138,96 @@ export default function CoursesPage() {
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-sky-600 bg-clip-text text-transparent">Course Management</h1>
           <p className="text-lg text-muted-foreground">Manage and monitor all courses in your learning platform</p>
         </div>
+
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {stats.map((stat, index) => (
             <Card key={index} className="group relative overflow-hidden border-0 bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl hover:bg-white/80 dark:hover:bg-gray-900/80 transition-all duration-300 hover:scale-105">
               <div className={`absolute inset-0 bg-gradient-to-br ${stat.bgColor} opacity-50`} />
               <CardHeader className="relative flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-semibold text-gray-700 dark:text-gray-300">{stat.title}</CardTitle>
+                <CardTitle className="text-sm font-semibold">{stat.title}</CardTitle>
                 <div className={`p-2 rounded-xl bg-gradient-to-br ${stat.color} shadow-lg group-hover:scale-110 transition-transform duration-300`}>
                   <stat.icon className="h-4 w-4 text-white" />
                 </div>
               </CardHeader>
               <CardContent className="relative">
-                <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{stat.value}</div>
+                <div className="text-2xl font-bold mb-1">{stat.value}</div>
                 <p className="text-xs text-muted-foreground">{stat.description}</p>
               </CardContent>
             </Card>
           ))}
         </div>
-        {/* Courses Grid
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {courses.map((course) => (
-            <Card key={course.id} className="group overflow-hidden border-0 bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl hover:bg-white/80 dark:hover:bg-gray-900/80 transition-all duration-300 hover:scale-105 hover:shadow-xl">
-              <div className="relative">
-                <img src={course.thumbnail || '/placeholder.svg'} alt={course.title} className="w-full h-48 object-cover" />
-                <div className="absolute top-3 left-3">
-                  <Badge
-                    variant={course.status === 'Active' ? 'default' : 'secondary'}
-                    className={`${course.status === 'Active' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'} border-0`}
-                  >
-                    {course.status}
-                  </Badge>
-                </div>
-                <div className="absolute top-3 right-3">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 bg-white/80 hover:bg-white rounded-lg shadow-md">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="rounded-xl bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border border-white/20 dark:border-gray-800/20">
-                      <DropdownMenuItem className="rounded-lg">
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit Course
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="rounded-lg">
-                        <Play className="mr-2 h-4 w-4" />
-                        Preview
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="rounded-lg text-red-600">
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
 
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1 flex-1">
-                    <CardTitle className="text-lg font-bold line-clamp-1">{course.title}</CardTitle>
-                    <CardDescription className="line-clamp-2">{course.description}</CardDescription>
+        {/* Courses Grid */}
+        {courses.length === 0 ? (
+          <div className="text-center text-muted-foreground text-lg mt-10">No courses available. Try adding some!</div>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {courses.map((course) => (
+              <Card key={course.id} className="group overflow-hidden border-0 bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl hover:bg-white/80 dark:hover:bg-gray-900/80 transition-all duration-300 hover:scale-105 hover:shadow-xl">
+                <div className="relative">
+                  <img src={course.thumbnail || '/placeholder.svg'} alt={course.title} className="w-full h-48 object-cover" />
+                  <div className="absolute top-3 left-3">
+                    <Badge variant={course.status === 'Active' ? 'default' : 'secondary'}>{course.status}</Badge>
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-xs">
-                    {course.category}
-                  </Badge>
-                  <Badge variant="outline" className="text-xs">
-                    {course.level}
-                  </Badge>
-                  <div className="flex items-center gap-1 ml-auto">
-                    <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                    <span className="text-xs font-medium">{course.rating}</span>
-                  </div>
-                </div>
-              </CardHeader>
-
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <Users className="h-3 w-3" />
-                    <span>{course.students} students</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    <span>{course.duration}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <BookOpen className="h-3 w-3" />
-                    <span>{course.lessons} lessons</span>
+                  <div className="absolute top-3 right-3">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 bg-white/80 hover:bg-white rounded-lg shadow-md">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit Course
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Play className="mr-2 h-4 w-4" />
+                          Preview
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-red-600">
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Progress</span>
-                    <span className="font-medium">{course.progress}%</span>
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1 flex-1">
+                      <CardTitle className="text-lg font-bold line-clamp-1">{course.title}</CardTitle>
+                      <CardDescription className="line-clamp-2">{course.description}</CardDescription>
+                    </div>
                   </div>
-                  <Progress value={course.progress} className="h-2" />
-                </div>
-
-                <div className="flex items-center justify-between pt-2">
                   <div className="flex items-center gap-2">
-                    <Avatar className="h-6 w-6">
-                      <AvatarImage src={course.instructorAvatar || '/placeholder.svg'} alt={course.instructor} />
-                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-sky-600 text-white text-xs">
-                        {course.instructor
-                          .split(' ')
-                          .map((n) => n[0])
-                          .join('')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-xs text-muted-foreground">{course.instructor}</span>
+                    <Badge variant="outline" className="text-xs">
+                      {course.category}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {course.level}
+                    </Badge>
+                    <div className="flex items-center gap-1 ml-auto">
+                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                      <span className="text-xs font-medium">{course.rating}</span>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-lg font-bold text-blue-600">{course.price}</div>
-                    <div className="text-xs text-muted-foreground">Updated {course.lastUpdated}</div>
+                </CardHeader>
+
+                <CardContent>
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      <span>{course.students} students</span>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div> */}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     </SidebarInset>
   );
