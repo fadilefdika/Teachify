@@ -9,10 +9,11 @@ import (
 
 // Course represents a learning course
 type Course struct {
-    ID          uuid.UUID      `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+    ID          uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey"`
     CreatedAt   time.Time
     UpdatedAt   time.Time
     DeletedAt   gorm.DeletedAt `gorm:"index"`
+    Slug string `gorm:"uniqueIndex" json:"slug"`
 
     Title       string         `json:"title" binding:"required"`
     Description string         `json:"description,omitempty"`

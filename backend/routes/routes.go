@@ -33,7 +33,7 @@ func SetupRoutes(r *gin.Engine) {
             // Courses
             authorized.POST("/courses", controllers.CreateCourse)
             authorized.GET("/courses", controllers.GetAllCourses)
-            authorized.GET("/courses/:id", controllers.GetCourseByID)
+            authorized.GET("/courses/:slug", controllers.GetCourseBySlug)
             authorized.PUT("/courses/:id", controllers.UpdateCourse)
             authorized.DELETE("/courses/:id", controllers.DeleteCourse)
 

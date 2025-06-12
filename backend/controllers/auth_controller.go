@@ -143,6 +143,7 @@ func Login(c *gin.Context) {
 			"role":           user.Role,
 			"isApproved":     user.IsApproved,
 			"needsCompletion": needsCompleteProfile,
+			"token":          tokenString,
 		},
 	})
 }
